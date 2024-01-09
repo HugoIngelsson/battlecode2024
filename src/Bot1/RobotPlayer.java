@@ -35,7 +35,7 @@ public strictfp class RobotPlayer {
         else {
             robot = new Attacker(rc);
         }
-        rc.writeSharedArray(0, id+1);
+        rc.writeSharedArray(0, (id+1)%50);
 
         while (true) {
             //System.out.println(Clock.getBytecodesLeft());
