@@ -5,7 +5,6 @@ import battlecode.common.*;
 import java.util.Random;
 
 public strictfp class RobotPlayer {
-
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
         Direction.NORTH,
@@ -18,37 +17,60 @@ public strictfp class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static Robot robot;
+    static int id;
+
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
-        while (true) {
+        id = rc.readSharedArray(0);
+        if (id < 10) {
+            robot = new Scout(rc);
+        }
+        else if (id < 15) {
+            robot = new Builder(rc);
+        }
+        else if (id < 25) {
+            robot = new Healer(rc);
+        }
+        else {
+            robot = new Attacker(rc);
+        }
+        rc.writeSharedArray(0, id+1);
 
-            // Try/catch blocks stop unhandled exceptions, which cause your robot to explode.
+        while (true) {
+            //System.out.println(Clock.getBytecodesLeft());
+            rc.writeSharedArray(1, 0);
+
             try {
-                // Make sure you spawn your robot in before you attempt to take any actions!
-                // Robots not spawned in do not have vision of any tiles and cannot perform any actions.
+                // if we aren't spawned, we want to spawn in
+                // and then move to clear space for other ducks to spawn
                 if (!rc.isSpawned()){
                     MapLocation[] spawnLocs = rc.getAllySpawnLocations();
-                    // Pick a random spawn location to attempt spawning in.
-                    MapLocation randomLoc = spawnLocs[0];
-                    if (rc.canSpawn(randomLoc)) rc.spawn(randomLoc);
-                }
 
+                    // gets the next open spot based on the duck's position in the turn order
+                    int nextOpenSpawn = robot.getNextSpawnableLocation(spawnLocs, id%27);
+
+                    // if id == -1, then there are no spawnable positions
+                    if (id != -1) {
+                        rc.spawn(spawnLocs[nextOpenSpawn]);
+
+                        // move away from the flag to clear out space
+                        FlagInfo[] flags = rc.senseNearbyFlags(-1);
+                        if (rc.isMovementReady() && rc.canMove(flags[0].getLocation().directionTo(rc.getLocation())))
+                            rc.move(flags[0].getLocation().directionTo(rc.getLocation()));
+                    }
+                }
             } catch (GameActionException e) {
-                // Oh no! It looks like we did something illegal in the Battlecode world. You should
-                // handle GameActionExceptions judiciously, in case unexpected events occur in the game
-                // world. Remember, uncaught exceptions cause your robot to explode!
                 System.out.println("GameActionException");
                 e.printStackTrace();
-
             } catch (Exception e) {
-                // Oh no! It looks like our code tried to do something bad. This isn't a
-                // GameActionException, so it's more likely to be a bug in our code.
                 System.out.println("Exception");
                 e.printStackTrace();
 
             } finally {
-                // Signify we've done everything we want to do, thereby ending our turn.
-                // This will make our code wait until the next turn, and then perform this loop again.
+                if (rc.getRoundNum() > 2) rc.resign();
+
+                System.out.println(Clock.getBytecodesLeft() + " " + id + " " + rc.isSpawned());
                 Clock.yield();
             }
             // End of loop: go back to the top. Clock.yield() has ended, so it's time for another turn!
