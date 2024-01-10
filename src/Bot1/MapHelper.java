@@ -19,4 +19,12 @@ public class MapHelper {
             else
                 return 10;
     }
+
+    public static MapLocation poseDecoder(int data) {
+        return new MapLocation(data >> 8, data & 0xff);
+    }
+
+    public static int poseEncoder(MapLocation pose) {
+        return (pose.x<<8)+pose.y;
+    }
 }
