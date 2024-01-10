@@ -1,9 +1,9 @@
-package Bot1;
+package Bot2;
 
-import Bot1.fast.FastMath;
-import battlecode.common.*;
-
-import java.util.Random;
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
 
 public strictfp class RobotPlayer {
     /** Array containing all the possible movement directions. */

@@ -1,7 +1,8 @@
-package Bot1;
+package Bot2;
 
-import battlecode.common.*;
-import java.util.Arrays;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class Commander extends Robot {
     RobotController rc;

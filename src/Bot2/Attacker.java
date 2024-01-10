@@ -1,6 +1,6 @@
-package Bot1;
+package Bot2;
 
-import Bot1.fast.FastMath;
+import Bot2.fast.FastMath;
 import battlecode.common.*;
 
 public class Attacker extends Robot {

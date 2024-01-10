@@ -1,13 +1,13 @@
-package Bot1;
+package Bot2;
 
-import Bot1.fast.FastMath;
+import Bot2.fast.FastMath;
 import battlecode.common.*;
 
-public class Attacker extends Robot {
+public class Scout extends Robot {
     RobotController rc;
     int id;
 
-    public Attacker(RobotController rc, int id) throws GameActionException {
+    public Scout(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
         this.rc = rc;
@@ -41,10 +41,6 @@ public class Attacker extends Robot {
 
             if (weakestAttackable != null) {
                 rc.attack(weakestAttackable.getLocation());
-
-                // if possible, run away from the enemy to kite it/avoid unnecessary attacks
-                if (rc.isMovementReady() && rc.canMove(weakestAttackable.getLocation().directionTo(rc.getLocation())))
-                    rc.move(weakestAttackable.getLocation().directionTo(rc.getLocation()));
             }
         }
         else if (super.getNearbyAllies().length > 0 && rc.isActionReady()) {
@@ -75,10 +71,6 @@ public class Attacker extends Robot {
             rc.heal(rc.getLocation());
         }
 
-        if (super.getNearbyCrumbs().length > 0) {
-            curDest = super.getNearbyCrumbs()[0];
-        }
-
         if (rc.isMovementReady()) {
             Direction next = super.pathfind(curDest);
 
@@ -94,5 +86,37 @@ public class Attacker extends Robot {
     @Override
     void endTurn() throws GameActionException {
         super.endTurn();
+    }
+
+    @Override
+    void playIfUnspawned() throws GameActionException {
+        MapLocation[] spawnLocs = rc.getAllySpawnLocations();
+
+        // gets the next open spot based on the duck's position in the turn order
+        int nextOpenSpawn = getNextSpawnableLocation(spawnLocs, id%27);
+
+        // if nextOpenSpawn == -1, then there are no spawnable positions
+        if (nextOpenSpawn != -1) {
+            rc.spawn(spawnLocs[nextOpenSpawn]);
+
+            super.atSpawnActions(nextOpenSpawn);
+            initTurn();
+            play();
+        }
+    }
+
+    @Override
+    public int getNextSpawnableLocation(MapLocation[] spawns, int id) {
+        double minDist = Integer.MAX_VALUE;
+        int minDistID = -1;
+
+        for (int i=spawns.length-1; i>=0; i--) {
+            if (rc.canSpawn(spawns[i]) && spawns[i].distanceSquaredTo(curDest) < minDist) {
+                minDist = spawns[i].distanceSquaredTo(curDest);
+                minDistID = i;
+            }
+        }
+
+        return minDistID;
     }
 }

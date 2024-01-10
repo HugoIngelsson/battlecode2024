@@ -1,6 +1,6 @@
-package Bot1;
+package Bot2;
 
-import battlecode.common.*;
+import battlecode.common.MapLocation;
 
 public class MapHelper {
     public static int WIDTH, HEIGHT;

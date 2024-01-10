@@ -1,6 +1,6 @@
-package Bot1;
+package Bot2;
 
-import Bot1.fast.FastMath;
+import Bot2.fast.FastMath;
 import battlecode.common.*;
 
 public abstract class Robot {
@@ -38,9 +38,11 @@ public abstract class Robot {
     }
 
     void endTurn() throws GameActionException {
-        if (curDest == null || rc.getLocation().equals(curDest)) {
+        if (curDest == null || rc.getLocation().equals(curDest) || rc.getLocation().equals(lastPosition)) {
             curDest = FastMath.getRandomMapLocation();
         }
+
+        lastPosition = rc.getLocation();
     }
 
     void playIfUnspawned() throws GameActionException {
@@ -49,7 +51,7 @@ public abstract class Robot {
         // gets the next open spot based on the duck's position in the turn order
         int nextOpenSpawn = getNextSpawnableLocation(spawnLocs, id%27);
 
-        // if id == -1, then there are no spawnable positions
+        // if nextOpenSpawn == -1, then there are no spawnable positions
         if (nextOpenSpawn != -1) {
             rc.spawn(spawnLocs[nextOpenSpawn]);
 
@@ -111,6 +113,7 @@ public abstract class Robot {
         for (int i=id; i<27; i++) {
             if (rc.canSpawn(spawns[i])) return i;
         }
+
         for (int i=id-1; i>=0; i--) {
             if (rc.canSpawn(spawns[i])) return i;
         }

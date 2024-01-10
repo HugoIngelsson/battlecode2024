@@ -1,13 +1,13 @@
-package Bot1;
+package Bot2;
 
-import Bot1.fast.FastMath;
+import Bot2.fast.FastMath;
 import battlecode.common.*;
 
-public class Attacker extends Robot {
+public class Healer extends Robot {
     RobotController rc;
     int id;
 
-    public Attacker(RobotController rc, int id) throws GameActionException {
+    public Healer(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
         this.rc = rc;
@@ -19,7 +19,32 @@ public class Attacker extends Robot {
         if (rc.hasFlag()) {
             // do something
         }
-        else if (super.getNearbyEnemies().length > 0 && rc.isActionReady()) { // see if we can attack an enemy
+        else if (super.getNearbyAllies().length > 0 && rc.isActionReady()) {
+            RobotInfo weakestHealable = null;
+
+            for (RobotInfo ally : super.getNearbyAllies()) {
+                if (rc.canAttack(ally.getLocation())) {
+                    if (weakestHealable == null || weakestHealable.getHealth() > ally.getHealth()) {
+                        weakestHealable = ally;
+                    }
+                }
+
+                if (ally.hasFlag()) { // if the ally has a flag, we want to defend it
+                    curDest = ally.getLocation();
+
+                    if (rc.canAttack(ally.getLocation())) {
+                        weakestHealable = ally;
+                        break;
+                    }
+                }
+            }
+
+            if (weakestHealable != null && weakestHealable.getHealth() < GameConstants.DEFAULT_HEALTH) {
+                rc.heal(weakestHealable.getLocation());
+            }
+        }
+        // if we still have our action, we might as well try to attack
+        if (super.getNearbyEnemies().length > 0 && rc.isActionReady()) { // see if we can attack an enemy
             RobotInfo weakestAttackable = null;
 
             for (RobotInfo enemy : super.getNearbyEnemies()) {
@@ -45,30 +70,6 @@ public class Attacker extends Robot {
                 // if possible, run away from the enemy to kite it/avoid unnecessary attacks
                 if (rc.isMovementReady() && rc.canMove(weakestAttackable.getLocation().directionTo(rc.getLocation())))
                     rc.move(weakestAttackable.getLocation().directionTo(rc.getLocation()));
-            }
-        }
-        else if (super.getNearbyAllies().length > 0 && rc.isActionReady()) {
-            RobotInfo weakestHealable = null;
-
-            for (RobotInfo ally : super.getNearbyAllies()) {
-                if (rc.canAttack(ally.getLocation())) {
-                    if (weakestHealable == null || weakestHealable.getHealth() > ally.getHealth()) {
-                        weakestHealable = ally;
-                    }
-                }
-
-                if (ally.hasFlag()) { // if the ally has a flag, we want to defend it
-                    curDest = ally.getLocation();
-
-                    if (rc.canAttack(ally.getLocation())) {
-                        weakestHealable = ally;
-                        break;
-                    }
-                }
-            }
-
-            if (weakestHealable != null && weakestHealable.getHealth() < GameConstants.DEFAULT_HEALTH - 50) {
-                rc.heal(weakestHealable.getLocation());
             }
         }
         else if (rc.getHealth() < 1000 && rc.isActionReady()) {
