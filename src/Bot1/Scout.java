@@ -116,7 +116,7 @@ public class Scout extends Robot {
                 minDistID = i;
             }
         }
-        
+
         return minDistID;
     }
 }
