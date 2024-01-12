@@ -35,6 +35,7 @@ public abstract class Robot {
         this.nearbyEnemies = rc.senseNearbyRobots(-1, this.enemyTeam);
         this.nearbyAllies = rc.senseNearbyRobots(-1, this.myTeam);
         this.nearbyCrumbs = rc.senseNearbyCrumbs(-1);
+        PathFinding.initTurn();
     }
 
     void endTurn() throws GameActionException {

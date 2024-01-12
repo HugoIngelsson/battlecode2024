@@ -80,9 +80,10 @@ public class Attacker extends Robot {
         }
 
         if (rc.isMovementReady()) {
-            Direction next = super.pathfind(curDest);
-
-            if (next != null) rc.move(next);
+            PathFinding.move(curDest);
+//            Direction next = super.pathfind(curDest);
+//
+//            if (next != null) rc.move(next);
         }
     }
 

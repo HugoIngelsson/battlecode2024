@@ -5,6 +5,8 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
+import java.nio.file.Path;
+
 public strictfp class RobotPlayer {
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -25,6 +27,7 @@ public strictfp class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
         id = rc.readSharedArray(0);
         rc.writeSharedArray(0, (id+1)%50);
+        PathFinding.init(rc);
 
         if (id < 10) {
             robot = new Scout(rc, id);
