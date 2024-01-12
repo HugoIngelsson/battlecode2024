@@ -28,23 +28,24 @@ public class Builder extends Robot {
     void playIfUnspawned() throws GameActionException {
         MapLocation[] spawnLocs = rc.getAllySpawnLocations();
         MapLocation[] subSpawns = null;
+        int divider = spawnLocs.length/3;
 
         switch (id % 3) {
             case 0:
-                subSpawns = Arrays.copyOfRange(spawnLocs, 0, 9);
+                subSpawns = Arrays.copyOfRange(spawnLocs, 0, divider);
                 break;
             case 1:
-                subSpawns = Arrays.copyOfRange(spawnLocs, 9, 18);
+                subSpawns = Arrays.copyOfRange(spawnLocs, divider, divider * 2);
                 break;
             case 2:
-                subSpawns = Arrays.copyOfRange(spawnLocs, 18, 27);
+                subSpawns = Arrays.copyOfRange(spawnLocs, divider * 2, divider * 3);
                 break;
             default:
                 break;
         }
 
         // gets the next open spot based on the duck's position in the turn order
-        int nextOpenSpawn = getNextSpawnableLocation(subSpawns, id%9);
+        int nextOpenSpawn = getNextSpawnableLocation(subSpawns, id%divider);
 
         // if id == -1, then there are no spawnable positions
         if (nextOpenSpawn != -1) {
@@ -54,6 +55,19 @@ public class Builder extends Robot {
             initTurn();
             play();
         }
+    }
+
+    @Override
+    public int getNextSpawnableLocation(MapLocation[] spawns, int id) {
+        for (int i=id; i<spawns.length; i++) {
+            if (rc.canSpawn(spawns[i])) return i;
+        }
+
+        for (int i=id-1; i>=0; i--) {
+            if (rc.canSpawn(spawns[i])) return i;
+        }
+
+        return -1;
     }
 
     void play() throws GameActionException {
@@ -152,9 +166,6 @@ public class Builder extends Robot {
 
         if (dist <= 20 && rc.canBuild(TrapType.STUN, rc.getLocation())) {
             rc.build(TrapType.STUN, rc.getLocation());
-            //System.out.println("trap built, dist: " + dist);
-            //System.out.println("location: " + rc.getLocation());
-            //System.out.println("for flag at: " + foundFlag.getLocation());
         }
         
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(20);
