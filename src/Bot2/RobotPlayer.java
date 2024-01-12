@@ -29,10 +29,10 @@ public strictfp class RobotPlayer {
         if (id < 10) {
             robot = new Scout(rc, id);
         }
-        else if (id < 15) {
+        else if (id < 16) {
             robot = new Builder(rc, id);
         }
-        else if (id < 25) {
+        else if (id < 26) {
             robot = new Healer(rc, id);
         }
         else if (id == 49) {
