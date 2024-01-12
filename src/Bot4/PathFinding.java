@@ -1,9 +1,12 @@
-package Bot3;
+package Bot4;
 
-import Bot3.fast.FastMath;
-import battlecode.common.*;
+import battlecode.common.Direction;
+import battlecode.common.GameConstants;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 import java.util.HashSet;
+import Bot4.fast.FastMath;
 
 public class PathFinding {
 
@@ -37,7 +40,7 @@ public class PathFinding {
     }
 
     static boolean canMove(Direction dir) {
-        if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy)))) {
+        if (rc.canFill(rc.getLocation().add(dir))) {
             return true;
         }
         if (!rc.canMove(dir))
@@ -165,8 +168,8 @@ public class PathFinding {
                 // the middle of the loop. (It can be done more efficiently)
                 for (int i = 8; i-- > 0;) {
                     if (canMove(dir)) {
-                        if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy)))) {
-                            rc.fill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy)));
+                        if (rc.canFill(myLoc.add(dir))) {
+                            rc.fill(myLoc.add(dir));
                         }
                         else rc.move(dir);
                         // Debug.println("Moving in dir: " + dir);
@@ -177,7 +180,7 @@ public class PathFinding {
                         rotateRight = !rotateRight;
                         // If I could not go in that direction and it was not outside of the map, then
                         // this is the latest obstacle found
-                    else
+                    else if (!rc.sensePassability(myLoc))
                         lastObstacleFound = myLoc.add(dir);
                     if (rotateRight)
                         dir = dir.rotateRight();
@@ -186,8 +189,8 @@ public class PathFinding {
                 }
 
                 if (canMove(dir)) {
-                    if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy)))) {
-                        rc.fill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy)));
+                    if (rc.canFill(myLoc.add(dir))) {
+                        rc.fill(myLoc.add(dir));
                     }
                     else rc.move(dir);
                 }

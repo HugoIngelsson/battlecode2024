@@ -1,4 +1,4 @@
-package Bot2;
+package Bot4;
 
 import Bot2.fast.FastMath;
 import battlecode.common.*;
@@ -28,7 +28,6 @@ public class Builder extends Robot {
     void playIfUnspawned() throws GameActionException {
         MapLocation[] spawnLocs = rc.getAllySpawnLocations();
         MapLocation[] subSpawns = null;
-        foundFlag = null;
 
         switch (id % 3) {
             case 0:
@@ -51,7 +50,7 @@ public class Builder extends Robot {
         if (nextOpenSpawn != -1) {
             rc.spawn(subSpawns[nextOpenSpawn]);
 
-            atSpawnActions(nextOpenSpawn);
+            atSpawnActions();
             initTurn();
             play();
         }
@@ -61,6 +60,17 @@ public class Builder extends Robot {
         FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
         if (rc.hasFlag()) {
             // do something
+            curDest = MapHelper.poseDecoder(rc.readSharedArray(1));
+
+            PathFinding.move(curDest);
+            return;
+        }
+        else if (super.getEnemyFlags().length > 0) {
+            tempTarget = super.getEnemyFlags()[0].getLocation();
+
+            if (tempTarget.equals(rc.getLocation()))
+                if (!rc.canPickupFlag(tempTarget)) tempTarget = null;
+                else if (rc.isActionReady()) rc.pickupFlag(tempTarget);
         }
         else if (super.getNearbyEnemies().length > 0 && rc.isActionReady()) { // see if we can attack an enemy
             if (super.getNearbyEnemies().length > 2 && rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation())) {
@@ -100,16 +110,16 @@ public class Builder extends Robot {
             RobotInfo weakestHealable = null;
 
             for (RobotInfo ally : super.getNearbyAllies()) {
-                if (rc.canAttack(ally.getLocation())) {
+                if (rc.canHeal(ally.getLocation())) {
                     if (weakestHealable == null || weakestHealable.getHealth() > ally.getHealth()) {
                         weakestHealable = ally;
                     }
                 }
 
                 if (ally.hasFlag()) { // if the ally has a flag, we want to defend it
-                    curDest = ally.getLocation();
+                    tempTarget = ally.getLocation();
 
-                    if (rc.canAttack(ally.getLocation())) {
+                    if (rc.canHeal(ally.getLocation())) {
                         weakestHealable = ally;
                         break;
                     }
@@ -124,14 +134,14 @@ public class Builder extends Robot {
             rc.heal(rc.getLocation());
         }
 
-        if (super.getNearbyCrumbs().length > 0) {
-            // curDest = super.getNearbyCrumbs()[0];
-        }
+//        if (super.getNearbyCrumbs().length > 0) {
+//            // curDest = super.getNearbyCrumbs()[0];
+//        }
 
 
         if (foundFlag == null && nearbyFlags.length > 0) {
             int min = Integer.MAX_VALUE;
-            int idx = 0;
+            int idx = -1;
             dist = Integer.MAX_VALUE;
             for (int i = 0; i < nearbyFlags.length; i++)  {
                 dist = nearbyFlags[i].getLocation().distanceSquaredTo(rc.getLocation());
@@ -146,41 +156,36 @@ public class Builder extends Robot {
             }
             foundFlag = nearbyFlags[idx];
             curDest = foundFlag.getLocation();
-        }
-        else if (foundFlag == null) {
-            // do something
-        }
-        else {
+        } else {
             dist = foundFlag.getLocation().distanceSquaredTo(rc.getLocation());
+        }
 
-            if (dist <= 20 && rc.canBuild(TrapType.STUN, rc.getLocation())) {
-                rc.build(TrapType.STUN, rc.getLocation());
-                //System.out.println("trap built, dist: " + dist);
-                //System.out.println("location: " + rc.getLocation());
-                //System.out.println("for flag at: " + foundFlag.getLocation());
+
+        if (dist <= 10 && rc.canBuild(TrapType.STUN, rc.getLocation())) {
+            rc.build(TrapType.STUN, rc.getLocation());
+            //System.out.println("trap built, dist: " + dist);
+            //System.out.println("location: " + rc.getLocation());
+            //System.out.println("for flag at: " + foundFlag.getLocation());
+        }
+
+        MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(10);
+        if (nearbyTiles != null) {
+            ArrayList<MapInfo> emptyTiles = new ArrayList<>();
+            for (int i = 0; i < nearbyTiles.length; i++) {
+                if (foundFlag.getLocation().distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= 20 && nearbyTiles[i].getTrapType() == TrapType.NONE) {
+                    emptyTiles.add(nearbyTiles[i]);
+                }
             }
-
-            MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(20);
-            if (nearbyTiles != null) {
-                ArrayList<MapInfo> emptyTiles = new ArrayList<>();
-                for (int i = 0; i < nearbyTiles.length; i++) {
-                    if (foundFlag.getLocation().distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= 20 && nearbyTiles[i].getTrapType() == TrapType.NONE) {
-                        emptyTiles.add(nearbyTiles[i]);
-                    }
-                }
-                if (emptyTiles.size() > 0) {
-                    curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
-                } else {
-                    curDest = foundFlag.getLocation();
-                }
+            if (emptyTiles.size() > 0) {
+                curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
+            } else {
+                curDest = foundFlag.getLocation();
             }
         }
-        
+
 
         if (rc.isMovementReady()) {
-            Direction next = super.pathfind(curDest);
-
-            if (next != null) rc.move(next);
+            PathFinding.move(curDest);
         }
     }
 

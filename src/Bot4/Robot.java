@@ -1,13 +1,13 @@
-package Bot2;
+package Bot4;
 
-import Bot2.fast.FastMath;
 import battlecode.common.*;
+import Bot4.fast.FastMath;
 
 public abstract class Robot {
     RobotController rc;
     int id;
     MapLocation curDest;
-    MapLocation lastPosition;
+    MapLocation tempTarget;
 
     Team myTeam;
     Team enemyTeam;
@@ -15,6 +15,7 @@ public abstract class Robot {
     RobotInfo[] nearbyEnemies;
     RobotInfo[] nearbyAllies;
     MapLocation[] nearbyCrumbs;
+    FlagInfo[] enemyFlags;
 
     public Robot(RobotController rc, int id) throws GameActionException {
         this.rc = rc;
@@ -35,14 +36,25 @@ public abstract class Robot {
         this.nearbyEnemies = rc.senseNearbyRobots(-1, this.enemyTeam);
         this.nearbyAllies = rc.senseNearbyRobots(-1, this.myTeam);
         this.nearbyCrumbs = rc.senseNearbyCrumbs(-1);
+        this.enemyFlags = rc.senseNearbyFlags(-1, this.enemyTeam);
+
+        if (rc.getRoundNum() == 200) {
+            int byteZero = rc.readSharedArray(0);
+            MapLocation flag1 = MapHelper.poseDecoder(rc.readSharedArray(1));
+            if (!RobotPlayer.bitAt(byteZero, 15)) {
+                this.curDest = new MapLocation(flag1.x, MapHelper.HEIGHT - flag1.y - 1);
+            }
+            else if (!RobotPlayer.bitAt(byteZero, 14)) {
+                this.curDest = new MapLocation(MapHelper.WIDTH - flag1.x - 1, flag1.y);
+            }
+            else this.curDest = new MapLocation(MapHelper.WIDTH - flag1.x - 1, MapHelper.HEIGHT - flag1.y - 1);
+        }
+
+        PathFinding.initTurn();
     }
 
     void endTurn() throws GameActionException {
-        if (curDest == null || rc.getLocation().equals(curDest) || rc.getLocation().equals(lastPosition)) {
-            curDest = FastMath.getRandomMapLocation();
-        }
-
-        lastPosition = rc.getLocation();
+        if (rc.getLocation().equals(tempTarget)) tempTarget = null;
     }
 
     void playIfUnspawned() throws GameActionException {
@@ -55,38 +67,33 @@ public abstract class Robot {
         if (nextOpenSpawn != -1) {
             rc.spawn(spawnLocs[nextOpenSpawn]);
 
-            atSpawnActions(nextOpenSpawn);
+            atSpawnActions();
             initTurn();
             play();
         }
     }
 
-    void atSpawnActions(int openSpawn) throws GameActionException {
+    void atSpawnActions() throws GameActionException {
         // move away from the flag to clear out space
         FlagInfo[] closeFlags = rc.senseNearbyFlags(2);
-        if (rc.getRoundNum() == 0 && rc.canPickupFlag(rc.getLocation())) {
-            if (rc.readSharedArray(1) == 0) {
-                rc.writeSharedArray(1, MapHelper.poseEncoder(rc.getLocation()));
+        if (rc.getRoundNum() == 1) {
+            if (rc.canPickupFlag(rc.getLocation())) {
+                if (rc.readSharedArray(1) == 0) {
+                    rc.writeSharedArray(1, MapHelper.poseEncoder(rc.getLocation()));
+                }
+                else if (rc.readSharedArray(2) == 0) {
+                    rc.writeSharedArray(2, MapHelper.poseEncoder(rc.getLocation()));
+                }
+                else {
+                    rc.writeSharedArray(3, MapHelper.poseEncoder(rc.getLocation()));
+                }
             }
-            else if (rc.readSharedArray(2) == 0) {
-                rc.writeSharedArray(2, MapHelper.poseEncoder(rc.getLocation()));
-            }
-            else {
-                rc.writeSharedArray(3, MapHelper.poseEncoder(rc.getLocation()));
-            }
+            else if (rc.isMovementReady() && rc.canMove(closeFlags[0].getLocation().directionTo(rc.getLocation())))
+                rc.move(closeFlags[0].getLocation().directionTo(rc.getLocation()));
         }
-        else if (rc.isMovementReady() && rc.canMove(closeFlags[0].getLocation().directionTo(rc.getLocation())))
-            rc.move(closeFlags[0].getLocation().directionTo(rc.getLocation()));
-
-        this.lastPosition = rc.getLocation();
-    }
-
-    public Direction pathfind(MapLocation dest) throws GameActionException {
-        Direction wantedMove = rc.getLocation().directionTo(dest);
-        MapLocation nextPosition = FastMath.addVec(rc.getLocation(), new MapLocation(wantedMove.dx, wantedMove.dy));
-
-        if (rc.isLocationOccupied(nextPosition) || !rc.sensePassability(nextPosition)) return null;
-        return rc.getLocation().directionTo(dest);
+        else {
+            // do something
+        }
     }
 
     public Team getMyTeam() {
@@ -108,6 +115,8 @@ public abstract class Robot {
     public MapLocation[] getNearbyCrumbs() {
         return this.nearbyCrumbs;
     }
+
+    public FlagInfo[] getEnemyFlags() { return this.enemyFlags; }
 
     public int getNextSpawnableLocation(MapLocation[] spawns, int id) {
         for (int i=id; i<spawns.length; i++) {
