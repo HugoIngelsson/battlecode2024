@@ -54,9 +54,10 @@ public class PathFinding {
         if (!rc.isMovementReady())
             return;
         target = loc;
-        if (!BugNav.move())
-            greedyPath();
-        BugNav.move();
+        greedyPath();
+//        if (!BugNav.move())
+//            greedyPath();
+//        BugNav.move();
     }
 
     static final double eps = 1e-5;
@@ -96,6 +97,8 @@ public class PathFinding {
                     rc.fill(FastMath.addVec(rc.getLocation(), new MapLocation(bestDir.dx, bestDir.dy)));
                 }
                 else rc.move(bestDir);
+            } else {
+                BugNav.move();
             }
         } catch (Exception e) {
             e.printStackTrace();
