@@ -75,10 +75,10 @@ public abstract class Robot {
 
     void atSpawnActions() throws GameActionException {
         // update death counter for my group
-        int byteThirteen = rc.readSharedArray(13);
-        System.out.println(byteThirteen);
-        byteThirteen += 1<<(id%3*5);
-        rc.writeSharedArray(13, byteThirteen);
+//        int byteThirteen = rc.readSharedArray(13);
+//        System.out.println(byteThirteen);
+//        byteThirteen += 1<<(id%3*5);
+//        rc.writeSharedArray(13, byteThirteen);
 
         // move away from the flag to clear out space
         FlagInfo[] closeFlags = rc.senseNearbyFlags(0);

@@ -1,12 +1,12 @@
 package Bot5;
 
-import Bot5.fast.FastMath;
 import battlecode.common.Direction;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 import java.util.HashSet;
+import Bot4.fast.FastMath;
 
 public class PathFinding {
 
@@ -54,9 +54,7 @@ public class PathFinding {
         if (!rc.isMovementReady())
             return;
         target = loc;
-//        if (!BugNav.move())
-//            greedyPath();
-        BugNav.move();
+        greedyPath();
     }
 
     static final double eps = 1e-5;
@@ -81,6 +79,8 @@ public class PathFinding {
 
                 // TODO: Better estimation?
                 double estimation = 1 + Util.distance(target, newLoc);
+                if (rc.canSenseLocation(target) && !rc.sensePassability(target)) estimation += 3;
+
                 if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy))))
                     estimation += 3;
                 if (bestDir == null || estimation < bestEstimation - eps
@@ -92,10 +92,11 @@ public class PathFinding {
             }
             if (bestDir != null) {
                 if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(bestDir.dx, bestDir.dy)))) {
-                    System.out.println("DIGGY");
                     rc.fill(FastMath.addVec(rc.getLocation(), new MapLocation(bestDir.dx, bestDir.dy)));
                 }
                 else rc.move(bestDir);
+            } else {
+                BugNav.move();
             }
         } catch (Exception e) {
             e.printStackTrace();

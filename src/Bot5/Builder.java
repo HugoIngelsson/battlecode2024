@@ -14,7 +14,6 @@ public class Builder extends Robot {
     FlagInfo foundFlag;
     Random rng;
 
-
     public Builder(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
@@ -160,9 +159,11 @@ public class Builder extends Robot {
             dist = foundFlag.getLocation().distanceSquaredTo(rc.getLocation());
         }
 
-
         if (dist <= 10 && rc.canBuild(TrapType.STUN, rc.getLocation())) {
-            rc.build(TrapType.STUN, rc.getLocation());
+            if (dist <= 2 && (rc.getLocation().x+rc.getLocation().y)%2==0)
+                if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
+                    rc.build(TrapType.EXPLOSIVE, rc.getLocation());
+            else rc.build(TrapType.STUN, rc.getLocation());
             //System.out.println("trap built, dist: " + dist);
             //System.out.println("location: " + rc.getLocation());
             //System.out.println("for flag at: " + foundFlag.getLocation());
