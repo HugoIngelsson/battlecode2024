@@ -50,6 +50,9 @@ public abstract class Robot {
             curDest = MapHelper.poseDecoder(rc.readSharedArray(4+id%3));
             this.justSpawned = false;
         }
+        if (curDest.distanceSquaredTo(rc.getLocation()) <= 4 && enemyFlags.length == 0){
+            curDest = FastMath.getRandomMapLocation();
+        }
 
         PathFinding.initTurn();
     }
