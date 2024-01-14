@@ -1,6 +1,6 @@
-package Bot5;
+package Bot6;
 
-import Bot5.fast.FastMath;
+import Bot6.fast.FastMath;
 import battlecode.common.*;
 
 public class Healer extends Robot {

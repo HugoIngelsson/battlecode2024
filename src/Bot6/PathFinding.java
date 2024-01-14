@@ -1,12 +1,12 @@
-package Bot5;
+package Bot6;
 
+import Bot6.fast.FastMath;
 import battlecode.common.Direction;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 import java.util.HashSet;
-import Bot5.fast.FastMath;
 
 public class PathFinding {
 
@@ -54,7 +54,7 @@ public class PathFinding {
         if (!rc.isMovementReady())
             return;
         target = loc;
-        greedyPath();
+        BugNav.move();
     }
 
     static final double eps = 1e-5;
@@ -81,8 +81,6 @@ public class PathFinding {
                 double estimation = 1 + Util.distance(target, newLoc);
                 if (rc.canSenseLocation(target) && !rc.sensePassability(target)) estimation += 3;
 
-                if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(dir.dx, dir.dy))))
-                    estimation += 3;
                 if (bestDir == null || estimation < bestEstimation - eps
                         || (Math.abs(estimation - bestEstimation) <= 2 * eps && newDist < bestEstimationDist)) {
                     bestEstimation = estimation;
@@ -91,8 +89,8 @@ public class PathFinding {
                 }
             }
             if (bestDir != null) {
-                if (rc.canFill(FastMath.addVec(rc.getLocation(), new MapLocation(bestDir.dx, bestDir.dy)))) {
-                    rc.fill(FastMath.addVec(rc.getLocation(), new MapLocation(bestDir.dx, bestDir.dy)));
+                if (rc.canFill(rc.getLocation().add(bestDir))) {
+                    rc.fill(rc.getLocation().add(bestDir));
                 }
                 else rc.move(bestDir);
             } else {
@@ -181,7 +179,7 @@ public class PathFinding {
                         rotateRight = !rotateRight;
                         // If I could not go in that direction and it was not outside of the map, then
                         // this is the latest obstacle found
-                    else if (!rc.sensePassability(myLoc))
+                    else
                         lastObstacleFound = myLoc.add(dir);
                     if (rotateRight)
                         dir = dir.rotateRight();

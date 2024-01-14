@@ -1,22 +1,21 @@
-package Bot5;
+package Bot6;
 
 import battlecode.common.GameActionException;
 import battlecode.common.GlobalUpgrade;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
-import java.util.Arrays;
-import java.util.Map;
-
 public class Commander extends Robot {
-    public static final int DEATH_LIMIT = 20;
+    public static int DEATH_LIMIT = 20;
     RobotController rc;
     int id;
     int byteThirteen;
     int attackCountdown;
+    int flagsCaptured;
 
     int[] flagDefensibility;
     MapLocation[] flags;
+    MapLocation[] enemyFlags;
 
     public Commander(RobotController rc, int id) throws GameActionException {
         super(rc, id);
@@ -30,6 +29,7 @@ public class Commander extends Robot {
         findSymmetry();
         readProtection();
         getFlagSafeties();
+        this.flagsCaptured = 0;
 
         endTurn();
     }
@@ -42,15 +42,27 @@ public class Commander extends Robot {
     void initTurn() throws GameActionException {
         super.initTurn();
 
-        if (rc.getRoundNum() == 200) {
-
-        }
-        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
+        if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
         else if (rc.getRoundNum() == 1501) rc.buyGlobal(GlobalUpgrade.HEALING);
+
+        if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||
+            flagsCaptured == 0 && RobotPlayer.bitAt(byteZero, 9)) {
+
+            int weakestID = nextWeakest(flagDefensibility);
+            MapLocation weakestSpot = enemyFlags[weakestID];
+            System.out.println(flagsCaptured + " " + weakestID + " " + weakestSpot);
+
+            rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
+            rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
+            rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
+
+            flagsCaptured++;
+            DEATH_LIMIT += 5;
+        }
 
         this.byteThirteen = rc.readSharedArray(13);
         if (attackCountdown < 0 && byteThirteen > DEATH_LIMIT) {
-            attackCountdown = 25;
+            attackCountdown = Math.max(rc.getMapWidth(), rc.getMapHeight());
         }
     }
 
@@ -73,7 +85,7 @@ public class Commander extends Robot {
     public void getFlagSafeties() throws GameActionException {
         int byteZero = rc.readSharedArray(0);
 
-        MapLocation[] enemyFlags = new MapLocation[3];
+        enemyFlags = new MapLocation[3];
         if (!RobotPlayer.bitAt(byteZero, 15)) {
             enemyFlags[0] = reflectVertically(flags[0]);
             enemyFlags[1] = reflectVertically(flags[1]);
@@ -90,8 +102,6 @@ public class Commander extends Robot {
             enemyFlags[2] = rotate(flags[2]);
         }
 
-        MapLocation weakestSpot = null;
-        int defensibility = Integer.MAX_VALUE;
         for (int i=0; i<3; i++) {
             int minSafe = enemyFlags[i].distanceSquaredTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
             int minHazard = Integer.MAX_VALUE;
@@ -101,12 +111,10 @@ public class Commander extends Robot {
 
             flagDefensibility[i] *= 10;
             flagDefensibility[i] += minHazard + minSafe;
-
-            if (flagDefensibility[i] < defensibility) {
-                weakestSpot = enemyFlags[i];
-                defensibility = flagDefensibility[i];
-            }
         }
+
+        int weakestID = nextWeakest(flagDefensibility);
+        MapLocation weakestSpot = enemyFlags[weakestID];
 
         rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
         rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
@@ -140,6 +148,21 @@ public class Commander extends Robot {
         rc.writeSharedArray(10, 0);
         rc.writeSharedArray(11, 0);
         rc.writeSharedArray(12, 0);
+    }
+
+    private int nextWeakest(int[] flagDefensibility) {
+        int id=0;
+        int defense = flagDefensibility[0];
+
+        for (int i=1; i<3; i++) {
+            if (flagDefensibility[i] < defense) {
+                id = i;
+                defense = flagDefensibility[i];
+            }
+        }
+
+        flagDefensibility[id] = Integer.MAX_VALUE;
+        return id;
     }
 
     private void findSymmetry() throws GameActionException {

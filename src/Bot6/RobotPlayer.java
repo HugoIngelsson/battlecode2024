@@ -1,4 +1,4 @@
-package Bot5;
+package Bot6;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -56,8 +56,8 @@ public strictfp class RobotPlayer {
                 else  {
                     robot.initTurn();
                     robot.play();
-                    robot.endTurn();
                 }
+                robot.endTurn();
             } catch (GameActionException e) {
                 System.out.println("GameActionException");
                 e.printStackTrace();

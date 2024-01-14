@@ -1,6 +1,6 @@
-package Bot5.fast;
+package Bot6.fast;
 
-import Bot5.MapHelper;
+import Bot6.MapHelper;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

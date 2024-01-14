@@ -1,15 +1,14 @@
-package Bot5;
+package Bot6;
 
-import Bot5.fast.FastMath;
+import Bot6.fast.FastMath;
 import battlecode.common.*;
-
-import java.util.Arrays;
 
 public abstract class Robot {
     RobotController rc;
     int id;
     int byteZero;
     boolean justSpawned;
+    boolean hadFlag;
     MapLocation curDest;
     MapLocation tempTarget;
 
@@ -21,9 +20,11 @@ public abstract class Robot {
     MapLocation[] nearbyCrumbs;
     FlagInfo[] enemyFlags;
 
+
     public Robot(RobotController rc, int id) throws GameActionException {
         this.rc = rc;
         this.id = id;
+        this.hadFlag = false;
 
         this.myTeam = rc.getTeam();
         switch (this.myTeam) {
@@ -57,7 +58,19 @@ public abstract class Robot {
     }
 
     void endTurn() throws GameActionException {
-        if (tempTarget != null && rc.getLocation().distanceSquaredTo(tempTarget) <= 4) tempTarget = null;
+        if (rc.isSpawned()) {
+            if (tempTarget != null && rc.getLocation().distanceSquaredTo(tempTarget) <= 4) tempTarget = null;
+        }
+
+        if (rc.hasFlag()) {
+            hadFlag = true;
+        }
+        else if (hadFlag) {
+            if (rc.isSpawned()) {
+                captureFlag();
+            }
+            hadFlag = false;
+        }
     }
 
     void playIfUnspawned() throws GameActionException {
@@ -153,5 +166,13 @@ public abstract class Robot {
         }
 
         return -1;
+    }
+
+    public void captureFlag() throws GameActionException {
+        if (!RobotPlayer.bitAt(byteZero, 9)) byteZero += 0x200;
+        else if (!RobotPlayer.bitAt(byteZero, 8)) byteZero += 0x100;
+        else byteZero += 0x80;
+
+        rc.writeSharedArray(0, byteZero);
     }
 }

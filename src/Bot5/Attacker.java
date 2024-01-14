@@ -32,7 +32,8 @@ public class Attacker extends Robot {
                 if (!rc.canPickupFlag(tempTarget)) tempTarget = null;
                 else if (rc.isActionReady()) rc.pickupFlag(tempTarget);
         }
-        else if (super.getNearbyEnemies().length > 0 && rc.isActionReady()) { // see if we can attack an enemy
+
+        if (super.getNearbyEnemies().length > 0 && rc.isActionReady()) { // see if we can attack an enemy
             RobotInfo weakestAttackable = null;
 
             for (RobotInfo enemy : super.getNearbyEnemies()) {
@@ -43,8 +44,6 @@ public class Attacker extends Robot {
                 }
 
                 if (enemy.hasFlag()) { // if the enemy has a flag, we want to focus it
-                    curDest = enemy.getLocation();
-
                     if (rc.canAttack(enemy.getLocation())) {
                         weakestAttackable = enemy;
                         break;
@@ -53,6 +52,7 @@ public class Attacker extends Robot {
             }
 
             if (weakestAttackable != null) {
+                tempTarget = weakestAttackable.getLocation();
                 rc.attack(weakestAttackable.getLocation());
 
                 // if possible, run away from the enemy to kite it/avoid unnecessary attacks
@@ -60,7 +60,8 @@ public class Attacker extends Robot {
                     rc.move(weakestAttackable.getLocation().directionTo(rc.getLocation()));
             }
         }
-        else if (super.getNearbyAllies().length > 0 && rc.isActionReady()) {
+
+        if (super.getNearbyAllies().length > 0 && rc.isActionReady()) {
             RobotInfo weakestHealable = null;
 
             for (RobotInfo ally : super.getNearbyAllies()) {
@@ -84,7 +85,8 @@ public class Attacker extends Robot {
                 rc.heal(weakestHealable.getLocation());
             }
         }
-        else if (rc.getHealth() < 1000 && rc.isActionReady()) {
+
+        if (rc.getHealth() < 1000 && rc.isActionReady()) {
             rc.heal(rc.getLocation());
         }
 
