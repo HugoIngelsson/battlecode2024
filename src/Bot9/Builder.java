@@ -141,88 +141,21 @@ public class Builder extends Robot {
             rc.heal(rc.getLocation());
         }
 
-//        if (super.getNearbyCrumbs().length > 0) {
-//            // curDest = super.getNearbyCrumbs()[0];
-//        }
-
-
-
-        if (id < 3) {
-            if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
-                if (rc.isActionReady()) {
-                    for (MapInfo mi : rc.senseNearbyMapInfos(2)) {
-                        if (mi.isWater() && rc.canFill(mi.getMapLocation())) {
-                            rc.fill(mi.getMapLocation());
-                            break;
-                        }
-                    }
-                }
-
-                if (rc.isActionReady()) {
-                    for (Direction d : Direction.allDirections()) {
-                        if (rc.canDig(rc.getLocation().add(d))) {
-                            rc.dig(rc.getLocation().add(d));
-                            break;
-                        }
-                    }
-                }
-
-                curDest = rc.getLocation();
-            }
-            else {
-                if (foundFlag == null && nearbyFlags.length > 0) {
-                    int min = Integer.MAX_VALUE;
-                    int idx = -1;
-                    dist = Integer.MAX_VALUE;
-                    for (int i = 0; i < nearbyFlags.length; i++)  {
-                        dist = nearbyFlags[i].getLocation().distanceSquaredTo(rc.getLocation());
-                        if (dist == 1) {
-                            idx = i;
-                            break;
-                        }
-                        if (dist < 17) {
-                            idx = i;
-                            min = dist;
-                        }
-                    }
-                    foundFlag = nearbyFlags[idx];
-                    curDest = foundFlag.getLocation();
-                } else {
-                    dist = foundFlag.getLocation().distanceSquaredTo(rc.getLocation());
-                }
-
-                if (dist <= DEFENSE_RADIUS && rc.canBuild(TrapType.STUN, rc.getLocation())) {
-                    if (dist <= BOMB_DEFENSE_RADIUS && (rc.getLocation().x+rc.getLocation().y)%2==0) {
-                        if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
-                            rc.build(TrapType.EXPLOSIVE, rc.getLocation());
-                    }
-                    else rc.build(TrapType.STUN, rc.getLocation());
-                    //System.out.println("trap built, dist: " + dist);
-                    //System.out.println("location: " + rc.getLocation());
-                    //System.out.println("for flag at: " + foundFlag.getLocation());
-                }
-
-                MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(foundFlag.getLocation(), DEFENSE_RADIUS);
-                if (nearbyTiles != null) {
-                    ArrayList<MapInfo> emptyTiles = new ArrayList<>();
-                    for (int i = 0; i < nearbyTiles.length; i++) {
-                        if (foundFlag.getLocation().distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= DEFENSE_RADIUS &&
-                                nearbyTiles[i].getTrapType() == TrapType.NONE) {
-                            emptyTiles.add(nearbyTiles[i]);
-                        }
-                    }
-                    if (!emptyTiles.isEmpty()) {
-                        curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
-                    } else {
-                        curDest = foundFlag.getLocation();
-                    }
-                }
-            }
+        if (super.getNearbyCrumbs().length > 0) {
+             curDest = super.getNearbyCrumbs()[0];
         }
 
         if (rc.isMovementReady()) {
-            if (tempTarget != null) PathFinding.move(tempTarget);
-            else PathFinding.move(curDest);
+            if (super.getNearbyAllies().length * 1.2 < super.getNearbyEnemies().length) {
+                PathFinding.move(MapHelper.poseDecoder(rc.readSharedArray(7+id%3)));
+            }
+            else if (rc.hasFlag() || super.getNearbyEnemies().length <= FEAR_LIMIT) {
+                if (tempTarget != null) PathFinding.move(tempTarget);
+                else PathFinding.move(curDest);
+            }
+            else {
+                PathFinding.move(super.allyCenter());
+            }
         }
     }
 

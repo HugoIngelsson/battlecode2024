@@ -27,7 +27,10 @@ public strictfp class RobotPlayer {
         rc.writeSharedArray(0, (id+1)%50);
         PathFinding.init(rc);
 
-        if (id < 8) {
+        if (id < 3) {
+            robot = new Defender(rc, id);
+        }
+        else if (id < 8) {
             robot = new Builder(rc, id);
         }
         else if (id < 16) {

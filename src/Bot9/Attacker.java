@@ -105,6 +105,9 @@ public class Attacker extends Robot {
                 if (tempTarget != null) PathFinding.move(tempTarget);
                 else PathFinding.move(curDest);
             }
+            else {
+                PathFinding.move(super.allyCenter());
+            }
         }
     }
 

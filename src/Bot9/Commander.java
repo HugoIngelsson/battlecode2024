@@ -19,6 +19,8 @@ public class Commander extends Robot {
     MapLocation[] flags;
     MapLocation[] enemyFlags;
 
+    MapLocation middle;
+
     public Commander(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
@@ -30,6 +32,7 @@ public class Commander extends Robot {
 
         this.flagsCaptured = 0;
         this.potentialCaptures = new boolean[3];
+        this.middle = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
 
         findSymmetry();
         readProtection();
@@ -65,8 +68,6 @@ public class Commander extends Robot {
             rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
         }
         else if (rc.getRoundNum() == 200) {
-            MapLocation middle = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
-
             rc.writeSharedArray(7, MapHelper.poseEncoder(middle));
             rc.writeSharedArray(8, MapHelper.poseEncoder(middle));
             rc.writeSharedArray(9, MapHelper.poseEncoder(middle));
@@ -200,6 +201,11 @@ public class Commander extends Robot {
         MapLocation[] broadcast = rc.senseBroadcastFlagLocations();
         boolean safeToClear = false;
 
+        // check if we think we've made some captures we haven't
+        if (broadcast.length + this.flagsCaptured > GameConstants.NUMBER_FLAGS) {
+            this.flagsCaptured = GameConstants.NUMBER_FLAGS - broadcast.length;
+        }
+
         // we know that all flags yet to be captured are on the map and unseen
         if (broadcast.length + this.flagsCaptured == GameConstants.NUMBER_FLAGS) {
             safeToClear = true;
@@ -216,6 +222,10 @@ public class Commander extends Robot {
                     }
                 }
 
+                // if the location is outside of this radius, it's likely being stowed somewhere
+                if (mp.distanceSquaredTo(middle) >= rc.getMapHeight() * rc.getMapWidth())
+                    oddFlag = true;
+
                 safeToClear &= oddFlag;
             }
         }
@@ -226,18 +236,39 @@ public class Commander extends Robot {
             potentialCaptures[1] = true;
             potentialCaptures[2] = true;
 
+            boolean[] foundHomeFor = {true, true, true};
+            int homeID = 0;
             for (MapLocation mp : broadcast) {
                 int minDist = Integer.MAX_VALUE;
                 int minID = -1;
 
                 for (int i=0; i<3; i++) {
-                    if (mp.distanceSquaredTo(enemyFlags[i]) < minDist) {
+                    if (mp.distanceSquaredTo(enemyFlags[i]) < minDist &&
+                            mp.distanceSquaredTo(enemyFlags[i]) <= 100) {
                         minDist = mp.distanceSquaredTo(enemyFlags[i]);
                         minID = i;
                     }
                 }
 
-                potentialCaptures[minID] = false;
+                if (minID != -1)
+                    potentialCaptures[minID] = false;
+                else
+                    foundHomeFor[homeID] = false;
+
+                homeID++;
+            }
+
+            homeID = 0;
+            for (MapLocation mp : broadcast) {
+                if (!foundHomeFor[homeID++]) {
+                    for (int i=0; i<3; i++) {
+                        if (potentialCaptures[i]) {
+                            enemyFlags[i] = mp;
+                            potentialCaptures[i] = false;
+                            break;
+                        }
+                    }
+                }
             }
         }
     }

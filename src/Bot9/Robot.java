@@ -5,6 +5,7 @@ import battlecode.common.*;
 
 public abstract class Robot {
     static final int FEAR_LIMIT = 5;
+    static final int DESIRED_DIST_TO_ALLY_CENTER = 4;
 
     RobotController rc;
     int id;
@@ -61,6 +62,7 @@ public abstract class Robot {
         }
 
         PathFinding.initTurn();
+        if (rc.getRoundNum() == 200) PathFinding.BugNav.resetPathfinding();
     }
 
     void endTurn() throws GameActionException {
@@ -214,5 +216,22 @@ public abstract class Robot {
         }
 
         return ret;
+    }
+
+    public MapLocation allyCenter() {
+        int x = 0;
+        int y = 0;
+
+        for (RobotInfo ally : this.nearbyAllies) {
+            x += ally.getLocation().x;
+            y += ally.getLocation().y;
+        }
+
+        MapLocation average = new MapLocation(x/this.nearbyAllies.length, y/this.nearbyAllies.length);
+
+        if (rc.getLocation().distanceSquaredTo(average) > DESIRED_DIST_TO_ALLY_CENTER)
+            return average;
+        else
+            return rc.getLocation();
     }
 }
