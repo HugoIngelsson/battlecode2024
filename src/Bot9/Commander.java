@@ -108,7 +108,7 @@ public class Commander extends Robot {
             byteZero -= 0x1c00;
 
             byteThirteen = 0;
-            rc.writeSharedArray(0, byteThirteen);
+            rc.writeSharedArray(13, byteThirteen);
         }
 
         rc.writeSharedArray(0, byteZero);
