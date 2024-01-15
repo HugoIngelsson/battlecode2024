@@ -1,6 +1,6 @@
 package Bot9;
 
-import Bot0.fast.FastMath;
+import Bot9.fast.FastMath;
 import battlecode.common.*;
 
 public class Scout extends Robot {
