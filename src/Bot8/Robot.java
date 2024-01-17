@@ -23,6 +23,8 @@ public abstract class Robot {
     MapLocation[] nearbyCrumbs;
     FlagInfo[] enemyFlags;
 
+    MapInfo[] nearbyMapInfo;
+
 
     public Robot(RobotController rc, int id) throws GameActionException {
         this.rc = rc;
@@ -46,6 +48,7 @@ public abstract class Robot {
             this.nearbyAllies = rc.senseNearbyRobots(-1, this.myTeam);
             this.nearbyCrumbs = rc.senseNearbyCrumbs(-1);
             this.enemyFlags = rc.senseNearbyFlags(-1, this.enemyTeam);
+            this.nearbyMapInfo = rc.senseNearbyMapInfos();
         }
 
         this.byteZero = rc.readSharedArray(0);
@@ -164,6 +167,7 @@ public abstract class Robot {
     }
 
     public FlagInfo[] getEnemyFlags() { return this.enemyFlags; }
+    public MapInfo[] getNearbyMapInfo() {return this.nearbyMapInfo;}
 
     public int getNextSpawnableLocation(MapLocation[] spawns, int id) {
         for (int i=id; i<spawns.length; i++) {

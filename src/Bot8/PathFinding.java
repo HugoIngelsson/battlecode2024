@@ -1,11 +1,9 @@
 package Bot8;
 
-import battlecode.common.Direction;
-import battlecode.common.GameConstants;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import Bot8.fast.IntIntMap;
+import battlecode.common.*;
 
-import java.util.HashSet;
+import java.util.*;
 
 public class PathFinding {
 
@@ -52,8 +50,17 @@ public class PathFinding {
     static public void move(MapLocation loc) {
         if (!rc.isMovementReady())
             return;
+
         target = loc;
-        BugNav.move();
+//        BugNav.move();
+        int bt = Clock.getBytecodeNum();
+
+        try {
+            Bellman.move();
+        } catch (GameActionException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println(Clock.getBytecodeNum()-bt);
     }
 
     static final double eps = 1e-5;
@@ -216,5 +223,73 @@ public class PathFinding {
             return (((((x << 6) | y) << 4) | obstacleDir.ordinal()) << 1) | bit;
         }
     }
+    static class Bellman  {
+        static final int INF = 1000000;
 
+        static IntIntMap constructHashMap(MapInfo[] locs){
+            IntIntMap map = new IntIntMap();
+            for(MapInfo loc: locs){
+                int add = 0;
+                if(loc.isPassable()) {
+                    add = 1;
+                }
+                map.add(locToKey(loc.getMapLocation()), INF+add);
+
+            }
+            return map;
+        }
+        static int locToKey(MapLocation l){
+            return l.x*100+l.y;
+        }
+        static void move() throws GameActionException {
+
+            MapInfo[] locs = rc.senseNearbyMapInfos(9);
+
+            // needs to be +1 bc of final dest
+//            int[] dirs = new int[locs.length+1];
+            IntIntMap dirs = constructHashMap(locs);
+//            int[] predecessor = new int[locs.length+1];
+
+            dirs.addReplace(locToKey(rc.getLocation()), 0);
+            int targetKey = locToKey(target);
+
+            dirs.addReplace(targetKey,INF);
+            // TODO: This needs optimization O(n^3) complexity is a bit of a bruh mmt.
+            // I think we start w/ the for loop for directions but idk
+            for(int i = 0;i<1;i++){
+                for(MapInfo info: locs){
+                    MapLocation loc = info.getMapLocation();
+                    int locKey = locToKey(loc);
+                    int value = dirs.getVal(locKey);
+                    if(value == INF){
+                        continue;
+                    }
+                    int dist = loc.distanceSquaredTo(target);
+                    for(Direction dir: directions){
+                        MapLocation possible = loc.add(dir);
+
+//                        int indx = getIndex(locs, possible);
+                        int possibleKey = locToKey(possible);
+                        if(dirs.contains(possibleKey) && dirs.getVal(possibleKey)!=INF+1) {
+                            if(value+1 <dirs.getVal(possibleKey)) {
+                                dirs.addReplace(possibleKey, value+1);
+                            }
+                        }
+                        else {
+                            // TODO: Using euclidean ig but you could change this
+                            if(dist < dirs.getVal(targetKey)){
+                                dirs.addReplace(targetKey,dist);
+                            }
+                        }
+                    }
+                }
+            }
+            // TODO: Figure out what to do with directions
+//            int currentloc = locs.length;
+//            System.out.println(dirs);
+//            rc.resign();
+
+        }
+
+    }
 }
