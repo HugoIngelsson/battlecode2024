@@ -33,6 +33,12 @@ public class Defender extends Robot {
 
     @Override
     void playIfUnspawned() throws GameActionException {
+        if (lastTurn != 0 && !justDied) {
+            justDied = true;
+            byteZero -= Math.pow(2, 7 - (flagId % 3));
+            rc.writeSharedArray(0, byteZero);
+        }
+
         MapLocation[] spawnLocs = rc.getAllySpawnLocations();
         MapLocation[] subSpawns = null;
 
@@ -67,10 +73,9 @@ public class Defender extends Robot {
     }
 
     void play() throws GameActionException {
-        if (lastTurn != 0 && !justDied) {
-            justDied = true;
+        if (!searching && !RobotPlayer.bitAt(0, 7 - (flagId % 3))) {
+            turnOnSafetyByte(flagId);
         }
-
         // debug
         /*if (rc.getRoundNum() == 100) {
             System.out.println("curDest:" + curDest);
@@ -88,22 +93,21 @@ public class Defender extends Robot {
             MapLocation nearestFlagLoc = nearbyFlags[0].getLocation();
             if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray(flagId + 1))) && 
             RobotPlayer.bitAt(0, 7 - (flagId) % 3)) {
-                byteZero |= 0x0080;
+                turnOnSafetyByte(flagId);
                 searching = false;
             }
             if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray((flagId + 1) % 3 + 1))) &&
             RobotPlayer.bitAt(0, 7 - (flagId + 1) % 3)) {
-                byteZero |= 0x0040;
+                turnOnSafetyByte(flagId);
                 searching = false;
                 flagId = (flagId + 1) % 3;
             }
             if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray((flagId + 2) % 3 + 1))) && 
             RobotPlayer.bitAt(0, 7 - (flagId + 2) % 3)) {
-                byteZero |= 0x0020;
+                turnOnSafetyByte(flagId);
                 searching = false;
                 flagId = (flagId + 2) % 3;
             }
-            rc.writeSharedArray(0, byteZero);
             //System.out.print("curDest is:" + (flagId + 1));
             //System.out.println("which is at " + MapHelper.poseDecoder(rc.readSharedArray(flagId + 1)));
             curDest = MapHelper.poseDecoder(rc.readSharedArray(flagId + 1));
@@ -216,6 +220,24 @@ public class Defender extends Robot {
             if (tempTarget != null) super.move(tempTarget);
             else super.move(curDest);
         }
+    }
+
+    void turnOnSafetyByte(int id) throws GameActionException {
+        switch (flagId) {
+            case 0:
+                byteZero |= 0x0080;
+                break;
+            case 1:
+                byteZero |= 0x0040;
+                break;
+            case 2:
+                byteZero |= 0x0020;
+                break;
+            default:
+                System.out.println("oops");
+                break;
+        }
+        rc.writeSharedArray(0, byteZero);
     }
 
     @Override
