@@ -13,6 +13,7 @@ public abstract class Robot {
 
     int byteZero;
     boolean justSpawned;
+    boolean justDied;
     boolean hadFlag;
     boolean bugNavMode;
     int lastTurn = 0;
@@ -34,6 +35,7 @@ public abstract class Robot {
         this.bf = new ParallelizedBF(this.rc);
         this.hadFlag = false;
         this.bugNavMode = false;
+        this.justDied = false;
 
         this.myTeam = rc.getTeam();
         switch (this.myTeam) {
@@ -123,6 +125,9 @@ public abstract class Robot {
     }
 
     void atSpawnActions() throws GameActionException {
+        // no longer joever
+        justDied = false;
+
         // update death counter for my group
         int byteThirteen = rc.readSharedArray(13);
         byteThirteen++;
