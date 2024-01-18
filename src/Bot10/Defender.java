@@ -137,8 +137,6 @@ public class Defender extends Robot {
                         rc.attack(weakestAttackable.getLocation());
                     }
                 }
-
-                if (rc.isActionReady() && rc.getHealth() < 1000) rc.heal(rc.getLocation());
             }
 
             MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(foundFlag.getLocation(), DEFENSE_RADIUS);

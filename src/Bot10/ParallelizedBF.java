@@ -2,6 +2,8 @@ package Bot10;
 
 import battlecode.common.*;
 
+import java.util.HashSet;
+
 public class ParallelizedBF {
     static final int WATER_COST = 4;
     static final Direction[] directions = {
@@ -16,22 +18,26 @@ public class ParallelizedBF {
             Direction.NORTHEAST
     };
 
+    static HashSet<Integer> visited = new HashSet<>();
+
     static long waterFilter;
     static long walkableFilter;
     static long[] iterations;
 
     RobotController rc;
-    MapLocation lastLocation;
     MapLocation lastTarget;
 
     public ParallelizedBF(RobotController rc) {
         this.rc = rc;
-        this.lastLocation = null;
         this.lastTarget = null;
     }
 
     public Direction BF(MapLocation target) throws GameActionException {
-        if (!target.equals(lastTarget)) lastLocation = null;
+        if (!target.equals(lastTarget)) {
+            visited.clear();
+        }
+
+        visited.add(getCode(rc.getLocation()));
         lastTarget = target;
 
         iterations = new long[20];
@@ -107,7 +113,7 @@ public class ParallelizedBF {
                     MapLocation dest = rc.getLocation().add(d);
                     if ((rc.canMove(d) || rc.senseMapInfo(dest).isWater()) &&
                             rc.getLocation().distanceSquaredTo(dest) < minDist &&
-                            !dest.equals(lastLocation)) {
+                            !visited.contains(getCode(dest))) {
                         minDir = d;
                         minDist = rc.getLocation().distanceSquaredTo(dest);
                     }
@@ -115,7 +121,6 @@ public class ParallelizedBF {
             }
         }
 
-        lastLocation = rc.getLocation();
         return minDir;
     }
 
@@ -139,5 +144,11 @@ public class ParallelizedBF {
 
     public static boolean strictlyCloser(MapLocation a, MapLocation b, MapLocation target) {
         return a.distanceSquaredTo(target) > b.distanceSquaredTo(target);
+    }
+
+    int getCode(MapLocation ml) {
+        int x = ml.x;
+        int y = ml.y;
+        return x*100+y;
     }
 }

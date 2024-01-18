@@ -72,7 +72,7 @@ public class Commander extends Robot {
             rc.writeSharedArray(8, MapHelper.poseEncoder(middle));
             rc.writeSharedArray(9, MapHelper.poseEncoder(middle));
         }
-        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
+        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.HEALING);
         if (rc.getRoundNum() == 1501) rc.buyGlobal(GlobalUpgrade.HEALING);
 
         if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||

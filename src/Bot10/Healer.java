@@ -26,9 +26,18 @@ public class Healer extends Robot {
             return;
         }
         else if (super.getEnemyFlags().length > 0) {
-            tempTarget = super.getEnemyFlags()[0].getLocation();
+            FlagInfo flag = super.getEnemyFlags()[0];
+            if (!flag.isPickedUp())
+                tempTarget = flag.getLocation();
+            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) <= 2) {
+                if (rc.canMove(flag.getLocation().directionTo(rc.getLocation()))) {
+                    rc.move(flag.getLocation().directionTo(rc.getLocation()));
+                }
+            }
+            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 4)
+                tempTarget = flag.getLocation();
 
-            if (tempTarget.equals(rc.getLocation()))
+            if (rc.getLocation().equals(tempTarget))
                 if (!rc.canPickupFlag(tempTarget)) tempTarget = null;
                 else if (rc.isActionReady()) {
                     rc.pickupFlag(tempTarget);
@@ -89,10 +98,6 @@ public class Healer extends Robot {
                 if (rc.isMovementReady() && rc.canMove(weakestAttackable.getLocation().directionTo(rc.getLocation())))
                     rc.move(weakestAttackable.getLocation().directionTo(rc.getLocation()));
             }
-        }
-
-        if (rc.getHealth() < 1000 && rc.isActionReady()) {
-            rc.heal(rc.getLocation());
         }
 
         if (super.getNearbyCrumbs().length > 0) {

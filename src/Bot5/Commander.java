@@ -45,7 +45,7 @@ public class Commander extends Robot {
         if (rc.getRoundNum() == 200) {
 
         }
-        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
+        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.HEALING);
         else if (rc.getRoundNum() == 1501) rc.buyGlobal(GlobalUpgrade.HEALING);
 
         this.byteThirteen = rc.readSharedArray(13);

@@ -42,7 +42,7 @@ public class Commander extends Robot {
     void initTurn() throws GameActionException {
         super.initTurn();
 
-        if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
+        if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.HEALING);
         else if (rc.getRoundNum() == 1501) rc.buyGlobal(GlobalUpgrade.HEALING);
 
         if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||

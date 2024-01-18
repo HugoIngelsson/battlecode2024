@@ -70,8 +70,10 @@ public class Commander extends Robot {
             rc.writeSharedArray(8, MapHelper.poseEncoder(middle));
             rc.writeSharedArray(9, MapHelper.poseEncoder(middle));
         }
-        else if (rc.getRoundNum() == 751) rc.buyGlobal(GlobalUpgrade.ACTION);
-        if (rc.getRoundNum() == 1501) rc.buyGlobal(GlobalUpgrade.HEALING);
+
+        if (rc.getRoundNum() == 601) rc.buyGlobal(GlobalUpgrade.ATTACK);
+        else if (rc.getRoundNum() == 1201) rc.buyGlobal(GlobalUpgrade.HEALING);
+        else if (rc.getRoundNum() == 1801) rc.buyGlobal(GlobalUpgrade.CAPTURING);
 
         if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||
             flagsCaptured == 0 && RobotPlayer.bitAt(byteZero, 9)) {
@@ -181,7 +183,7 @@ public class Commander extends Robot {
     }
 
     private int nextWeakest(int[] flagDefensibility) {
-        int id=-1;
+        int id=0;
         int defense = Integer.MAX_VALUE;
 
         for (int i=0; i<3; i++) {
