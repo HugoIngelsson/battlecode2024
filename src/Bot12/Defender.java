@@ -1,10 +1,9 @@
-package Bot11;
+package Bot12;
 
-import Bot11.fast.FastMath;
+import Bot12.fast.FastMath;
 import battlecode.common.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class Defender extends Robot {
@@ -57,7 +56,6 @@ public class Defender extends Robot {
                 idx++;
             }
         }
-
 
         // gets the next open spot based on the duck's position in the turn order
         int nextOpenSpawn = getNextSpawnableLocation(subSpawns, id%9);
