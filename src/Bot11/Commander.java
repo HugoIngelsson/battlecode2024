@@ -18,6 +18,7 @@ public class Commander extends Robot {
     MapLocation[] enemyFlags;
 
     MapLocation middle;
+    MapLocation weakestSpot;
 
     public Commander(RobotController rc, int id) throws GameActionException {
         super(rc, id);
@@ -59,16 +60,11 @@ public class Commander extends Robot {
             proofRead();
 
             int weakestID = nextWeakest(flagDefensibility);
-            MapLocation weakestSpot = enemyFlags[weakestID];
+            weakestSpot = enemyFlags[weakestID];
 
             rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
             rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
             rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
-        }
-        else if (rc.getRoundNum() == 200) {
-            rc.writeSharedArray(7, MapHelper.poseEncoder(middle));
-            rc.writeSharedArray(8, MapHelper.poseEncoder(middle));
-            rc.writeSharedArray(9, MapHelper.poseEncoder(middle));
         }
 
         if (rc.getRoundNum() == 601) rc.buyGlobal(GlobalUpgrade.ATTACK);
@@ -76,12 +72,12 @@ public class Commander extends Robot {
         else if (rc.getRoundNum() == 1801) rc.buyGlobal(GlobalUpgrade.CAPTURING);
 
         if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||
-            flagsCaptured == 0 && RobotPlayer.bitAt(byteZero, 9)) {
+                flagsCaptured == 0 && RobotPlayer.bitAt(byteZero, 9)) {
 
             potentialCaptures[this.currentTarget] = true;
 
             int weakestID = nextWeakest(flagDefensibility);
-            MapLocation weakestSpot = enemyFlags[weakestID];
+            weakestSpot = enemyFlags[weakestID];
             System.out.println(flagsCaptured + " " + weakestID + " " + weakestSpot);
 
             rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
@@ -89,8 +85,9 @@ public class Commander extends Robot {
             rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
 
             flagsCaptured++;
-            DEATH_LIMIT += 5;
         }
+
+        checkAlert();
 
         this.byteThirteen = rc.readSharedArray(13);
         if (attackCountdown < 0 && byteThirteen > DEATH_LIMIT) {
@@ -152,26 +149,71 @@ public class Commander extends Robot {
         rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
         rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
 
-        MapLocation closestSpawn = null;
-        int distance = Integer.MAX_VALUE;
-        for (int i=0; i<3; i++) {
-            if (distance > weakestSpot.distanceSquaredTo(flags[i])) {
-                distance = weakestSpot.distanceSquaredTo(flags[i]);
-                closestSpawn = flags[i];
-            }
-        }
+        MapLocation closestSpawn = getClosestSpawn(weakestSpot);
 
         int halfwayToTheMiddle = MapHelper.poseEncoder(new MapLocation(
-                                        (closestSpawn.x + rc.getMapWidth()/2) / 2,
-                                        (closestSpawn.y + rc.getMapHeight()/2) / 2
-                                 ));
+                (closestSpawn.x + rc.getMapWidth()/2) / 2,
+                (closestSpawn.y + rc.getMapHeight()/2) / 2
+        ));
 
         rc.writeSharedArray(7, halfwayToTheMiddle);
         rc.writeSharedArray(8, halfwayToTheMiddle);
         rc.writeSharedArray(9, halfwayToTheMiddle);
     }
 
+    private void checkAlert() throws GameActionException {
+        MapLocation closestSpawn = getClosestSpawn(weakestSpot);
+        MapLocation recon = new MapLocation((closestSpawn.x*2+weakestSpot.x)/3,(closestSpawn.y*2+weakestSpot.y)/3);
+        int reconEncoded = MapHelper.poseEncoder(recon);
+
+        if (!RobotPlayer.bitAt(byteZero, 7)) {
+            rc.writeSharedArray(7, rc.readSharedArray(1));
+            rc.writeSharedArray(8, rc.readSharedArray(1));
+            rc.writeSharedArray(9, rc.readSharedArray(1));
+
+            rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
+        }
+        else if (!RobotPlayer.bitAt(byteZero, 6)) {
+            rc.writeSharedArray(7, rc.readSharedArray(2));
+            rc.writeSharedArray(8, rc.readSharedArray(2));
+            rc.writeSharedArray(9, rc.readSharedArray(2));
+
+            rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
+        }
+        else if (!RobotPlayer.bitAt(byteZero, 5)) {
+            rc.writeSharedArray(7, rc.readSharedArray(3));
+            rc.writeSharedArray(8, rc.readSharedArray(3));
+            rc.writeSharedArray(9, rc.readSharedArray(3));
+
+            rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
+        }
+        else {
+            rc.writeSharedArray(7, reconEncoded);
+            rc.writeSharedArray(8, reconEncoded);
+            rc.writeSharedArray(9, reconEncoded);
+
+            rc.writeSharedArray(4, MapHelper.poseEncoder(weakestSpot));
+            rc.writeSharedArray(5, MapHelper.poseEncoder(weakestSpot));
+            rc.writeSharedArray(6, MapHelper.poseEncoder(weakestSpot));
+        }
+    }
+
+    private MapLocation getClosestSpawn(MapLocation dest) {
+        MapLocation closest = null;
+        int dist = Integer.MAX_VALUE;
+
+        for (MapLocation ml : flags) {
+            if (ml.distanceSquaredTo(dest) < dist) {
+                closest = ml;
+                dist = ml.distanceSquaredTo(dest);
+            }
+        }
+
+        return closest;
+    }
+
     private void readProtection() throws GameActionException {
+        // reads the number of walls near a flag
         flagDefensibility = new int[3];
         flagDefensibility[0] = rc.readSharedArray(10);
         flagDefensibility[1] = rc.readSharedArray(11);
@@ -336,8 +378,8 @@ public class Commander extends Robot {
         }
 
         return !announced[_0].isWithinDistanceSquared(modulated[0], 100) ||
-               !announced[_1].isWithinDistanceSquared(modulated[1], 100) ||
-               !announced[_2].isWithinDistanceSquared(modulated[2], 100);
+                !announced[_1].isWithinDistanceSquared(modulated[1], 100) ||
+                !announced[_2].isWithinDistanceSquared(modulated[2], 100);
     }
 
     private MapLocation reflectVertically(MapLocation original) {

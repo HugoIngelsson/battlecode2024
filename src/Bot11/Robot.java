@@ -1,6 +1,6 @@
 package Bot11;
 
-import Bot10.fast.FastMath;
+import Bot11.fast.FastMath;
 import battlecode.common.*;
 
 public abstract class Robot {
@@ -83,9 +83,7 @@ public abstract class Robot {
         }
         else {
             curDest = MapHelper.poseDecoder(rc.readSharedArray(4+id%3));
-            if (this.justSpawned) {
-                this.justSpawned = false;
-            }
+            this.justSpawned = false;
         }
 
         PathFinding.initTurn();
@@ -115,7 +113,11 @@ public abstract class Robot {
         MapLocation[] spawnLocs = rc.getAllySpawnLocations();
 
         // gets the next open spot based on the duck's position in the turn order
-        int nextOpenSpawn = getNextSpawnableLocation(spawnLocs, id%27);
+        int nextOpenSpawn;
+        if (rc.getRoundNum() == 1)
+            nextOpenSpawn = getNextSpawnableLocation(spawnLocs, id%27);
+        else
+            nextOpenSpawn = getClosestSpawnableLocation(spawnLocs, curDest);
 
         // if nextOpenSpawn == -1, then there are no spawnable positions
         if (nextOpenSpawn != -1) {
@@ -130,12 +132,12 @@ public abstract class Robot {
         // no longer joever
         justDied = false;
 
-        // update death counter for my group
+        // update death counter
         int byteThirteen = rc.readSharedArray(13);
         byteThirteen++;
         rc.writeSharedArray(13, byteThirteen);
 
-        // move away from the flag to clear out space
+        // move away from the flag to clear out space if it's round 1
         FlagInfo[] closeFlags = rc.senseNearbyFlags(0);
         if (rc.getRoundNum() == 1) {
             if (closeFlags.length > 0) {
@@ -207,6 +209,20 @@ public abstract class Robot {
         }
 
         return -1;
+    }
+
+    public int getClosestSpawnableLocation(MapLocation[] spawns, MapLocation dest) {
+        int best = -1;
+        int dist = Integer.MAX_VALUE;
+
+        for (int i=0; i<spawns.length; i++) {
+            if (rc.canSpawn(spawns[i]) && spawns[i].distanceSquaredTo(dest) < dist) {
+                best = i;
+                dist = spawns[i].distanceSquaredTo(dest);
+            }
+        }
+
+        return best;
     }
 
     public void captureFlag() throws GameActionException {

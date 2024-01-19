@@ -1,6 +1,6 @@
 package Bot11;
 
-import Bot10.fast.FastMath;
+import Bot11.fast.FastMath;
 import battlecode.common.*;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class Defender extends Robot {
             //System.out.println(flagId + " just died! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             justDied = true;
             //System.out.println("pre byte zero: " + byteZero);
-            byteZero -= Math.pow(2, 7 - flagId);
+            byteZero -= 1<<(7 - flagId);
             rc.writeSharedArray(0, byteZero);
             //System.out.println("post byte zero: " + byteZero);
             //System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
@@ -52,7 +52,7 @@ public class Defender extends Robot {
 
         int idx = 0;
         for (int i = 0; i < spawnLocs.length; i++) {
-            if (spawnLocs[i].distanceSquaredTo(findFlagLoc) < 4) { 
+            if (spawnLocs[i].distanceSquaredTo(findFlagLoc) < 4) {
                 subSpawns[idx] = spawnLocs[i];
                 idx++;
             }
@@ -79,10 +79,13 @@ public class Defender extends Robot {
 
     void play() throws GameActionException {
         byteZero = rc.readSharedArray(0);
-        if (!RobotPlayer.bitAt(byteZero, 7 - (flagId))) {
+        if (!RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length < 3) {
             System.out.println(flagId + " just spawned! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             turnOnSafetyByte(flagId);
             System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
+        }
+        else if (RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length > 3) {
+            turnOffSafetyByte(flagId);
         }
         //FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
 
@@ -110,7 +113,7 @@ public class Defender extends Robot {
                 if (rc.isMovementReady() && rc.canMove(spawnCenter.directionTo(rc.getLocation()))) {
                     rc.move(spawnCenter.directionTo(rc.getLocation()));
                 }
-            } 
+            }
             if (rc.getLocation().distanceSquaredTo(curDest) < 9) {
                 curDest = rc.getLocation();
             }
@@ -128,10 +131,26 @@ public class Defender extends Robot {
 
             if (rc.isActionReady() && rc.getRoundNum() > 200) {
                 if (super.getNearbyEnemies().length > 0) {
-                    RobotInfo weakestAttackable = Micro.getBestTarget(super.getNearbyEnemies(), super.getNearbyAllies(), damage);
+                    RobotInfo weakestAttackable = null;
+
+                    for (RobotInfo enemy : super.getNearbyEnemies()) {
+                        if (rc.canAttack(enemy.getLocation())) {
+                            if (weakestAttackable == null || weakestAttackable.getHealth() > enemy.getHealth()) {
+                                weakestAttackable = enemy;
+                            }
+                        }
+
+                        if (enemy.hasFlag()) { // if the enemy has a flag, we want to focus it
+                            if (rc.canAttack(enemy.getLocation())) {
+                                weakestAttackable = enemy;
+                                break;
+                            }
+
+                            tempTarget = enemy.getLocation();
+                        }
+                    }
 
                     if (weakestAttackable != null) {
-                        tempTarget = weakestAttackable.getLocation();
                         rc.attack(weakestAttackable.getLocation());
                     }
                 }
@@ -170,6 +189,24 @@ public class Defender extends Robot {
                 break;
             case 2:
                 byteZero |= 0x0020;
+                break;
+            default:
+                System.out.println("oops");
+                break;
+        }
+        rc.writeSharedArray(0, byteZero);
+    }
+
+    void turnOffSafetyByte(int id) throws GameActionException {
+        switch (flagId) {
+            case 0:
+                byteZero &= ~0x0080;
+                break;
+            case 1:
+                byteZero &= ~0x0040;
+                break;
+            case 2:
+                byteZero &= ~0x0020;
                 break;
             default:
                 System.out.println("oops");
