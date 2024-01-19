@@ -14,17 +14,17 @@ public class Defender extends Robot {
     RobotController rc;
     int id;
     int dist;
-    FlagInfo foundFlag;
+    MapLocation spawnCenter;
     int flagId;
     Random rng;
     boolean searching;
+
 
     public Defender(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
         this.rc = rc;
         this.id = id;
-        this.foundFlag = null;
         this.searching = true;
         this.flagId = id % 3;
         this.curDest = FastMath.getRandomMapLocation();;
@@ -33,31 +33,36 @@ public class Defender extends Robot {
 
     @Override
     void playIfUnspawned() throws GameActionException {
-        if (lastTurn != 0 && !justDied) {
+        if (rc.getRoundNum() > 10 && !justDied) {
+            byteZero = rc.readSharedArray(0);
+            //System.out.println(flagId + " just died! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             justDied = true;
-            byteZero -= Math.pow(2, 7 - (flagId % 3));
+            //System.out.println("pre byte zero: " + byteZero);
+            byteZero -= Math.pow(2, 7 - flagId);
             rc.writeSharedArray(0, byteZero);
+            //System.out.println("post byte zero: " + byteZero);
+            //System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
         }
 
         MapLocation[] spawnLocs = rc.getAllySpawnLocations();
-        MapLocation[] subSpawns = null;
+        MapLocation[] subSpawns = new MapLocation[9];
 
-        if (searching) {
-            switch (id % 3) {
-                case 0:
-                    subSpawns = Arrays.copyOfRange(spawnLocs, 0, 9);
-                    break;
-                case 1:
-                    subSpawns = Arrays.copyOfRange(spawnLocs, 9, 18);
-                    break;
-                case 2:
-                    subSpawns = Arrays.copyOfRange(spawnLocs, 18, 27);
-                    break;
-                default:
-                    break;
+        MapLocation findFlagLoc = MapHelper.poseDecoder(rc.readSharedArray(1 + flagId));
+        spawnCenter = findFlagLoc;
+
+        int idx = 0;
+        for (int i = 0; i < spawnLocs.length; i++) {
+            if (spawnLocs[i].distanceSquaredTo(findFlagLoc) < 4) { 
+                subSpawns[idx] = spawnLocs[i];
+                idx++;
             }
-        } else {
-            subSpawns = Arrays.copyOfRange(spawnLocs, 9*(flagId % 3), 9+9*(flagId % 3));
+        }
+
+
+        if (rc.getRoundNum() < 3) {
+            System.out.println("flagId" + (flagId + 1));
+            System.out.println(rc.readSharedArray(1 + flagId));
+            System.out.println("spawn center:" + spawnCenter);
         }
 
         // gets the next open spot based on the duck's position in the turn order
@@ -73,46 +78,15 @@ public class Defender extends Robot {
     }
 
     void play() throws GameActionException {
-        if (!searching && !RobotPlayer.bitAt(0, 7 - (flagId % 3))) {
+        byteZero = rc.readSharedArray(0);
+        if (!RobotPlayer.bitAt(byteZero, 7 - (flagId))) {
+            System.out.println(flagId + " just spawned! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             turnOnSafetyByte(flagId);
+            System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
         }
-        // debug
-        /*if (rc.getRoundNum() == 100) {
-            System.out.println("curDest:" + curDest);
-            System.out.println("flagId:" + flagId);
-            System.out.println("arrayFlagLoc:" + MapHelper.poseDecoder(rc.readSharedArray(flagId + 1)));
-        }*/
+        //FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
 
-        FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
-
-        /*if (rc.getRoundNum() % 100 == 0) {
-            System.out.println("nearby flags:" + nearbyFlags.length);
-            System.out.println("loc:" + rc.getLocation());
-        }*/
-        if (rc.getRoundNum() == 3) {
-            MapLocation nearestFlagLoc = nearbyFlags[0].getLocation();
-            if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray(flagId + 1))) && 
-            RobotPlayer.bitAt(0, 7 - (flagId) % 3)) {
-                turnOnSafetyByte(flagId);
-                searching = false;
-            }
-            if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray((flagId + 1) % 3 + 1))) &&
-            RobotPlayer.bitAt(0, 7 - (flagId + 1) % 3)) {
-                turnOnSafetyByte(flagId);
-                searching = false;
-                flagId = (flagId + 1) % 3;
-            }
-            if (searching && nearestFlagLoc.equals(MapHelper.poseDecoder(rc.readSharedArray((flagId + 2) % 3 + 1))) && 
-            RobotPlayer.bitAt(0, 7 - (flagId + 2) % 3)) {
-                turnOnSafetyByte(flagId);
-                searching = false;
-                flagId = (flagId + 2) % 3;
-            }
-            //System.out.print("curDest is:" + (flagId + 1));
-            //System.out.println("which is at " + MapHelper.poseDecoder(rc.readSharedArray(flagId + 1)));
-            curDest = MapHelper.poseDecoder(rc.readSharedArray(flagId + 1));
-            //System.out.println(curDest);
-        } else if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
+        if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
             if (rc.isActionReady()) {
                 for (MapInfo mi : rc.senseNearbyMapInfos(2)) {
                     if (mi.isWater() && rc.canFill(mi.getMapLocation())) {
@@ -131,37 +105,18 @@ public class Defender extends Robot {
                 }
             }
 
-            curDest = MapHelper.poseDecoder(rc.readSharedArray(flagId + 1));
+            curDest = spawnCenter;
+            if (rc.getLocation().distanceSquaredTo(spawnCenter) == 0) {
+                if (rc.isMovementReady() && rc.canMove(spawnCenter.directionTo(rc.getLocation()))) {
+                    rc.move(spawnCenter.directionTo(rc.getLocation()));
+                }
+            } 
             if (rc.getLocation().distanceSquaredTo(curDest) < 9) {
                 curDest = rc.getLocation();
             }
         }
         else {
-            if (foundFlag == null && nearbyFlags.length > 0) {
-                System.out.println("finding flag!");
-                int min = Integer.MAX_VALUE;
-                int idx = -1;
-                dist = Integer.MAX_VALUE;
-                for (int i = 0; i < nearbyFlags.length; i++)  {
-                    dist = nearbyFlags[i].getLocation().distanceSquaredTo(rc.getLocation());
-                    if (dist == 1) {
-                        idx = i;
-                        break;
-                    }
-                    if (dist < 17) {
-                        idx = i;
-                        min = dist;
-                    }
-                }
-                foundFlag = nearbyFlags[idx];
-                curDest = foundFlag.getLocation();
-            } else {
-                if (foundFlag == null) {
-                    dist = Integer.MAX_VALUE;
-                } else {
-                    dist = foundFlag.getLocation().distanceSquaredTo(rc.getLocation());
-                }
-            }
+            dist = spawnCenter.distanceSquaredTo(rc.getLocation());
 
             if (dist <= DEFENSE_RADIUS && rc.canBuild(TrapType.STUN, rc.getLocation())) {
                 if (dist <= BOMB_DEFENSE_RADIUS && (rc.getLocation().x+rc.getLocation().y)%2==0) {
@@ -198,11 +153,11 @@ public class Defender extends Robot {
                 }
             }
 
-            MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(foundFlag.getLocation(), DEFENSE_RADIUS);
+            MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(spawnCenter, DEFENSE_RADIUS);
             if (nearbyTiles != null) {
                 ArrayList<MapInfo> emptyTiles = new ArrayList<>();
                 for (int i = 0; i < nearbyTiles.length; i++) {
-                    if (foundFlag.getLocation().distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= DEFENSE_RADIUS &&
+                    if (spawnCenter.distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= DEFENSE_RADIUS &&
                             nearbyTiles[i].getTrapType() == TrapType.NONE) {
                         emptyTiles.add(nearbyTiles[i]);
                     }
@@ -210,11 +165,10 @@ public class Defender extends Robot {
                 if (!emptyTiles.isEmpty()) {
                     curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
                 } else {
-                    curDest = foundFlag.getLocation();
+                    curDest = spawnCenter;
                 }
             }
         }
-
 
         if (rc.isMovementReady()) {
             if (tempTarget != null) super.move(tempTarget);

@@ -27,17 +27,17 @@ public strictfp class RobotPlayer {
         rc.writeSharedArray(0, (id+1)%50);
         PathFinding.init(rc);
 
-        if (id < 3) {
-            robot = new Defender(rc, id);
-        }
-        else if (id < 8) {
+        if (id < 5) {
             robot = new Builder(rc, id);
         }
-        else if (id < 16) {
+        else if (id < 13) {
             robot = new Scout(rc, id);
         }
-        else if (id < 25) {
+        else if (id < 22) {
             robot = new Healer(rc, id);
+        }
+        else if (id > 45 && id < 49) {
+            robot = new Defender(rc, id);
         }
         else if (id == 49) {
             robot = new Commander(rc, id);
