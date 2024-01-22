@@ -102,7 +102,7 @@ public abstract class Robot {
             lastTurn = rc.getRoundNum();
         }
         else if (hadFlag) {
-            if (rc.isSpawned() && lastTurn >= rc.getRoundNum()-10) {
+            if (rc.isSpawned() && lastTurn >= rc.getRoundNum()-10 && rc.senseNearbyFlags(-1, enemyTeam).length == 0) {
                 captureFlag();
             }
 

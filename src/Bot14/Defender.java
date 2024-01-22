@@ -42,7 +42,7 @@ public class Defender extends Robot {
             //System.out.println(flagId + " just died! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             justDied = true;
             //System.out.println("pre byte zero: " + byteZero);
-            byteZero -= 1<<(7 - flagId);
+            byteZero &= ~(1<<(7 - flagId));
             rc.writeSharedArray(0, byteZero);
             //System.out.println("post byte zero: " + byteZero);
             //System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));

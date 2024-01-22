@@ -11,6 +11,7 @@ public class Commander extends Robot {
     int attackCountdown;
     int flagsCaptured;
     boolean[] potentialCaptures;
+    boolean shenanigansAfoot;
 
     int currentTarget;
     int[] flagDefensibility;
@@ -32,6 +33,7 @@ public class Commander extends Robot {
         this.flagsCaptured = 0;
         this.potentialCaptures = new boolean[3];
         this.middle = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        this.shenanigansAfoot = false;
 
         findSymmetry();
         readProtection();
@@ -117,6 +119,7 @@ public class Commander extends Robot {
         enemyFlags = new MapLocation[3];
         if ((byteZero >> 13) == 0) { // uh oh! couldn't determine any kind of symmetry!
             turtle();
+            shenanigansAfoot = true;
             return;
         }
         else if (!RobotPlayer.bitAt(byteZero, 15)) {
@@ -136,14 +139,8 @@ public class Commander extends Robot {
         }
 
         for (int i=0; i<3; i++) {
-            int minSafe = enemyFlags[i].distanceSquaredTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
-            int minHazard = Integer.MAX_VALUE;
-            for (int j=0; j<3; j++) {
-                minHazard = Math.min(minHazard, enemyFlags[i].distanceSquaredTo(flags[j]));
-            }
-
             flagDefensibility[i] *= 10;
-            flagDefensibility[i] += minHazard + minSafe;
+            flagDefensibility[i] += defenseOfSpot(enemyFlags[i]);
         }
 
         int weakestID = nextWeakest(flagDefensibility);
@@ -163,8 +160,6 @@ public class Commander extends Robot {
         rc.writeSharedArray(7, halfwayToTheMiddle);
         rc.writeSharedArray(8, halfwayToTheMiddle);
         rc.writeSharedArray(9, halfwayToTheMiddle);
-
-        turtle();
     }
 
     private void turtle() throws GameActionException {
@@ -271,6 +266,27 @@ public class Commander extends Robot {
         // we know that all flags yet to be captured are on the map and unseen
         if (broadcast.length + this.flagsCaptured == GameConstants.NUMBER_FLAGS) {
             safeToClear = true;
+            // if each sensed flag is within 10 units of an enemy flag spawn, we can
+            // (moderately) safely say that that was its spawn location
+            // otherwise, we can't gauge what flags are captured and what flags aren't
+            for (MapLocation mp : broadcast) {
+                boolean oddFlag = false;
+
+                for (MapLocation flag : this.enemyFlags) {
+                    if (mp.distanceSquaredTo(flag) <= 100) {
+                        oddFlag = true;
+                        break;
+                    }
+                }
+
+                // if the location is outside of this radius, it's likely being stowed somewhere
+                if (mp.distanceSquaredTo(middle) < rc.getMapHeight() * rc.getMapWidth())
+                    oddFlag = false;
+
+                safeToClear &= oddFlag;
+            }
+
+            safeToClear |= shenanigansAfoot;
         }
 
         // we can only update our flag info if we've guaranteed some amount of security
@@ -308,6 +324,7 @@ public class Commander extends Robot {
                         if (potentialCaptures[i]) {
                             enemyFlags[i] = mp;
                             potentialCaptures[i] = false;
+                            flagDefensibility[i] = defenseOfSpot(enemyFlags[i]);
                             break;
                         }
                     }
@@ -383,6 +400,16 @@ public class Commander extends Robot {
         return !announced[_0].isWithinDistanceSquared(modulated[0], 100) ||
                 !announced[_1].isWithinDistanceSquared(modulated[1], 100) ||
                 !announced[_2].isWithinDistanceSquared(modulated[2], 100);
+    }
+
+    private int defenseOfSpot(MapLocation loc) {
+        int minSafe = loc.distanceSquaredTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+        int minHazard = Integer.MAX_VALUE;
+        for (int j=0; j<3; j++) {
+            minHazard = Math.min(minHazard, loc.distanceSquaredTo(flags[j]));
+        }
+
+        return minHazard + minSafe;
     }
 
     private MapLocation reflectVertically(MapLocation original) {
