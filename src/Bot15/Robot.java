@@ -1,8 +1,7 @@
 package Bot15;
 
 import battlecode.common.*;
-
-import java.util.Arrays;
+import Bot15.fast.FastMath;
 
 public abstract class Robot {
     static final int FEAR_LIMIT = 5;

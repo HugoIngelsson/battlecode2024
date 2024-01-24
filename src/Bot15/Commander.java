@@ -82,9 +82,10 @@ public class Commander extends Robot {
         if (flagsCaptured == 1 && RobotPlayer.bitAt(byteZero, 8) ||
                 flagsCaptured == 0 && RobotPlayer.bitAt(byteZero, 9)) {
 
-            whichCaptured();
             flagsCaptured++;
             System.out.println("Flags captured: " + flagsCaptured);
+
+            whichCaptured();
         }
 
         int weakestID = nextWeakest(flagDefensibility);
@@ -204,20 +205,6 @@ public class Commander extends Robot {
             rc.writeSharedArray(8, rc.readSharedArray(5));
             rc.writeSharedArray(9, rc.readSharedArray(6));
         }
-    }
-
-    private MapLocation getClosestSpawn(MapLocation dest) {
-        MapLocation closest = null;
-        int dist = Integer.MAX_VALUE;
-
-        for (MapLocation ml : flags) {
-            if (ml.distanceSquaredTo(dest) < dist) {
-                closest = ml;
-                dist = ml.distanceSquaredTo(dest);
-            }
-        }
-
-        return closest;
     }
 
     private void readProtection() throws GameActionException {
@@ -439,12 +426,12 @@ public class Commander extends Robot {
             if (confirmedFlags[flagID] == null) confirmationCount++;
             confirmedFlags[flagID] = loc;
 
-            if (confirmationCount == 3) {
-                enemyFlags = confirmedFlags;
-                confirmationCount++;
-            }
-            else if (confirmationCount < 3) {
+            if (confirmationCount <= 3) {
                 replaceClosestConfirm(loc);
+                if (confirmationCount == 3) {
+                    confirmationCount++;
+                    shenanigansAfoot = false;
+                }
             }
         }
         currentPoints[flagID] = loc;
@@ -468,18 +455,26 @@ public class Commander extends Robot {
     private int whichCaptured() {
         int closestToABase = -1;
         int dist = Integer.MAX_VALUE;
+        int closestToAStart = -1;
+        int dist2 = Integer.MAX_VALUE;
 
         for (int i=3; --i >= 0;) {
-            if (!potentialCaptures[i] && currentPoints[i] != null) {
+            if (currentPoints[i] != null) {
                 int closestFlagDist = Integer.MAX_VALUE;
 
                 for (int j=3; --j >= 0;) {
                     closestFlagDist = Math.min(closestFlagDist, currentPoints[i].distanceSquaredTo(flags[j]));
+
+                    if (startPoints[i].distanceSquaredTo(enemyFlags[j]) < dist2) {
+                        dist2 = startPoints[i].distanceSquaredTo(enemyFlags[j]);
+                        closestToAStart = j;
+                    }
                 }
 
-                if (closestFlagDist < dist) {
-                    closestToABase = i;
+                if (closestFlagDist < dist && !potentialCaptures[closestToAStart]) {
+                    closestToABase = closestToAStart;
                     dist = closestFlagDist;
+                    System.out.println(startPoints[i] + " " + enemyFlags[closestToAStart]);
                 }
             }
         }

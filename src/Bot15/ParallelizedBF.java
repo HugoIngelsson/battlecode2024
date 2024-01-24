@@ -119,10 +119,6 @@ public class ParallelizedBF {
                         minDir = d;
                         minDist = rc.getLocation().distanceSquaredTo(dest);
                     }
-                    else if (rc.hasFlag() && rc.senseRobotAtLocation(dest) != null &&
-                            rc.senseRobotAtLocation(dest).team == rc.getTeam() && rc.isActionReady()) {
-                        rc.dropFlag(dest);
-                    }
                 }
             }
         }
