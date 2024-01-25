@@ -44,9 +44,9 @@ class Micro {
     static void sense() throws GameActionException {
         if (ENEMY_ATTACK_BONUS == 0) {
             if (containsAttackUpgrade(rc.getGlobalUpgrades(enemyTeam)))
-                ENEMY_ATTACK_BONUS = 75;
+                ENEMY_ATTACK_BONUS = 60;
             if (rc.getRoundNum() == 601) // we buy the upgrade on round 601
-                ALLY_ATTACK_BONUS = 75;
+                ALLY_ATTACK_BONUS = 60;
         }
         if (rc.getRoundNum() == 1201) // we buy the upgrade on round 1201
             ALLY_HEAL_BONUS = 50;
