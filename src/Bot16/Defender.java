@@ -4,7 +4,7 @@ import battlecode.common.*;
 
 import java.util.ArrayList;
 import java.util.Random;
-import Bot15.fast.FastMath;
+import Bot16.fast.FastMath;
 
 public class Defender extends Robot {
     static final int DEFENSE_RADIUS = 2;

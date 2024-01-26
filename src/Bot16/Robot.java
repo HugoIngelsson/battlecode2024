@@ -1,7 +1,7 @@
 package Bot16;
 
 import battlecode.common.*;
-import Bot15.fast.FastMath;
+import Bot16.fast.FastMath;
 
 public abstract class Robot {
     static final int FEAR_LIMIT = 5;

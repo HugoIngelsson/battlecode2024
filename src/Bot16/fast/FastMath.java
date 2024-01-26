@@ -1,6 +1,6 @@
 package Bot16.fast;
 
-import Bot15.MapHelper;
+import Bot16.MapHelper;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;

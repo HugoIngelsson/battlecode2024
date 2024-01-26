@@ -4,7 +4,7 @@ import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import Bot15.fast.FastMath;
+import Bot16.fast.FastMath;
 
 import java.util.Arrays;
 import java.util.Random;
