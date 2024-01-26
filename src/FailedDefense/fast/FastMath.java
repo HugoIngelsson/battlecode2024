@@ -1,6 +1,6 @@
-package Bot16.fast;
+package FailedDefense.fast;
 
-import Bot15.MapHelper;
+import FailedDefense.MapHelper;
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
@@ -82,9 +82,5 @@ public class FastMath {
     public static Direction dirFromVec(MapLocation a) {
         MapLocation origin = new MapLocation(0, 0);
         return origin.directionTo(a);
-    }
-
-    public static MapLocation averageLocation(MapLocation a, MapLocation b) {
-        return new MapLocation((a.x+b.x)/2, (a.y+b.y)/2);
     }
 }

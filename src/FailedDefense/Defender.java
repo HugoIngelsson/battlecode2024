@@ -1,14 +1,14 @@
-package Bot15;
+package FailedDefense;
 
+import FailedDefense.fast.FastMath;
 import battlecode.common.*;
 
 import java.util.ArrayList;
 import java.util.Random;
-import Bot15.fast.FastMath;
 
 public class Defender extends Robot {
-    static final int DEFENSE_RADIUS = 2;
-    static final int BOMB_DEFENSE_RADIUS = 2;
+    static final int DEFENSE_RADIUS = 1;
+    static final int BOMB_DEFENSE_RADIUS = 1;
 
     RobotController rc;
     int id;
@@ -84,94 +84,59 @@ public class Defender extends Robot {
         }
         //FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
 
-        if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
-            if(rc.getRoundNum() > 20) {
-                if (rc.isActionReady()) {
-                    for (Direction d : Direction.allDirections()) {
-                        if(rc.getRoundNum() < 75) {
-                            if (rc.canDig(rc.getLocation().add(d))) {
-                                rc.dig(rc.getLocation().add(d));
-                            }
-                        } else if(rc.getRoundNum() < 120){
-                            if(rc.canFill(rc.getLocation().add(d))){
-                                rc.fill(rc.getLocation().add(d));
-                            }
+        dist = spawnCenter.distanceSquaredTo(rc.getLocation());
+
+        if (rc.getLocation().y == spawnCenter.y &&
+                rc.canBuild(TrapType.STUN, rc.getLocation())) {
+            if (!rc.getLocation().equals(spawnCenter))
+                rc.build(TrapType.STUN, rc.getLocation());
+            else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
+                rc.build(TrapType.EXPLOSIVE, rc.getLocation());
+        }
+
+        if (rc.isActionReady() && rc.getRoundNum() > 200) {
+            if (super.getNearbyEnemies().length > 0) {
+                RobotInfo weakestAttackable = null;
+
+                for (RobotInfo enemy : super.getNearbyEnemies()) {
+                    if (rc.canAttack(enemy.getLocation())) {
+                        if (weakestAttackable == null || weakestAttackable.getHealth() > enemy.getHealth()) {
+                            weakestAttackable = enemy;
                         }
-                        else {
-                            if (rc.canDig(rc.getLocation().add(d))) {
-                                rc.dig(rc.getLocation().add(d));
-                            }
+                    }
+
+                    if (enemy.hasFlag()) { // if the enemy has a flag, we want to focus it
+                        if (rc.canAttack(enemy.getLocation())) {
+                            weakestAttackable = enemy;
+                            break;
                         }
+
+                        tempTarget = enemy.getLocation();
                     }
                 }
 
-                curDest = spawnCenter;
-                if (rc.getLocation().distanceSquaredTo(spawnCenter) == 0) {
-                    if (rc.canMove(dirs[ind]))
-                        rc.move(dirs[ind]);
-                    ind = (ind + 1) % 4;
+                if (weakestAttackable != null) {
+                    rc.attack(weakestAttackable.getLocation());
                 }
-                else  {
-                    curDest = spawnCenter;
+            }
+        }
+
+        MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(spawnCenter, DEFENSE_RADIUS);
+        if (nearbyTiles != null) {
+            ArrayList<MapInfo> emptyTiles = new ArrayList<>();
+            for (int i = 0; i < nearbyTiles.length; i++) {
+                if (spawnCenter.distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= DEFENSE_RADIUS &&
+                        nearbyTiles[i].getTrapType() == TrapType.NONE) {
+                    emptyTiles.add(nearbyTiles[i]);
                 }
+            }
+            if (!emptyTiles.isEmpty()) {
+                curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
             } else {
                 curDest = spawnCenter;
             }
         }
-        else {
-            dist = spawnCenter.distanceSquaredTo(rc.getLocation());
 
-            if (dist <= DEFENSE_RADIUS && rc.canBuild(TrapType.STUN, rc.getLocation())) {
-                if (dist <= BOMB_DEFENSE_RADIUS && (rc.getLocation().x+rc.getLocation().y)%2==0) {
-                    if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
-                        rc.build(TrapType.EXPLOSIVE, rc.getLocation());
-                }
-                else rc.build(TrapType.STUN, rc.getLocation());
-            }
-
-            if (rc.isActionReady() && rc.getRoundNum() > 200) {
-                if (super.getNearbyEnemies().length > 0) {
-                    RobotInfo weakestAttackable = null;
-
-                    for (RobotInfo enemy : super.getNearbyEnemies()) {
-                        if (rc.canAttack(enemy.getLocation())) {
-                            if (weakestAttackable == null || weakestAttackable.getHealth() > enemy.getHealth()) {
-                                weakestAttackable = enemy;
-                            }
-                        }
-
-                        if (enemy.hasFlag()) { // if the enemy has a flag, we want to focus it
-                            if (rc.canAttack(enemy.getLocation())) {
-                                weakestAttackable = enemy;
-                                break;
-                            }
-
-                            tempTarget = enemy.getLocation();
-                        }
-                    }
-
-                    if (weakestAttackable != null) {
-                        rc.attack(weakestAttackable.getLocation());
-                    }
-                }
-            }
-
-            MapInfo[] nearbyTiles = rc.senseNearbyMapInfos(spawnCenter, DEFENSE_RADIUS);
-            if (nearbyTiles != null) {
-                ArrayList<MapInfo> emptyTiles = new ArrayList<>();
-                for (int i = 0; i < nearbyTiles.length; i++) {
-                    if (spawnCenter.distanceSquaredTo(nearbyTiles[i].getMapLocation()) <= DEFENSE_RADIUS &&
-                            nearbyTiles[i].getTrapType() == TrapType.NONE) {
-                        emptyTiles.add(nearbyTiles[i]);
-                    }
-                }
-                if (!emptyTiles.isEmpty()) {
-                    curDest = emptyTiles.get(rng.nextInt(emptyTiles.size())).getMapLocation();
-                } else {
-                    curDest = spawnCenter;
-                }
-            }
-        }
 
         if (rc.isMovementReady()) {
             if (tempTarget != null) super.move(tempTarget);

@@ -15,6 +15,7 @@ public class Defender extends Robot {
     int dist;
     MapLocation spawnCenter;
     int flagId;
+    int lastTurnFlagSeen;
     Random rng;
     boolean searching;
     int ind;
@@ -33,6 +34,7 @@ public class Defender extends Robot {
         this.rng = new Random();
         this.ind = 0;
         this.inds = 0;
+        this.lastTurnFlagSeen = 0;
     }
 
     @Override
@@ -42,8 +44,10 @@ public class Defender extends Robot {
             //System.out.println(flagId + " just died! The bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
             justDied = true;
             //System.out.println("pre byte zero: " + byteZero);
-            byteZero &= ~(1<<(7 - flagId));
-            rc.writeSharedArray(0, byteZero);
+            if (rc.getRoundNum() - lastTurnFlagSeen < 30) {
+                byteZero &= ~(1<<(7 - flagId));
+                rc.writeSharedArray(0, byteZero);
+            }
             //System.out.println("post byte zero: " + byteZero);
             //System.out.println("Now the bit is " + RobotPlayer.bitAt(byteZero, 7 - flagId) + " and the byte is " + Integer.toBinaryString(rc.readSharedArray(0)));
         }
@@ -79,10 +83,13 @@ public class Defender extends Robot {
         if (!RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length < 3) {
             turnOnSafetyByte(flagId);
         }
-        else if (RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length > 3) {
+        else if (RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length > 3 &&
+                    rc.getRoundNum() - lastTurnFlagSeen < 30) {
             turnOffSafetyByte(flagId);
         }
-        //FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
+
+        FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1, myTeam);
+        if (nearbyFlags.length > 0) lastTurnFlagSeen = rc.getRoundNum();
 
         if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
             if(rc.getRoundNum() > 20) {
@@ -107,7 +114,7 @@ public class Defender extends Robot {
 
                 curDest = spawnCenter;
                 if (rc.getLocation().distanceSquaredTo(spawnCenter) == 0) {
-                    if(rc.canMove(dirs[ind])) {
+                    if (rc.canMove(dirs[ind])) {
                         rc.move(dirs[ind]);
                         ind = (ind + 1) % 4;
                     }

@@ -1,7 +1,7 @@
-package Bot16;
+package FailedDefense;
 
+import FailedDefense.fast.FastMath;
 import battlecode.common.*;
-import Bot15.fast.FastMath;
 
 public abstract class Robot {
     static final int FEAR_LIMIT = 5;
@@ -60,7 +60,7 @@ public abstract class Robot {
                 if (rc.isActionReady() && rc.canFill(dest))
                     rc.fill(dest);
             }
-            else if (rc.canMove(dir))
+            if (rc.canMove(dir))
                 rc.move(dir);
         }
         else {
@@ -81,6 +81,8 @@ public abstract class Robot {
 
         if (this.justSpawned && RobotPlayer.bitAt(this.byteZero, 12-(id%3))) {
              curDest = MapHelper.poseDecoder(rc.readSharedArray(7+id%3));
+             if (rc.isSpawned() && !rc.getLocation().isWithinDistanceSquared(curDest, 50))
+                 curDest = MapHelper.poseDecoder(rc.readSharedArray(4+id%3));
         }
         else {
             curDest = MapHelper.poseDecoder(rc.readSharedArray(4+id%3));
@@ -109,11 +111,6 @@ public abstract class Robot {
             }
 
             hadFlag = false;
-        }
-
-        if (rc.readSharedArray(14+2*(id%3)) == rc.getID() && rc.getRoundNum() - lastTurn > 4) {
-            rc.writeSharedArray(14+2*(id%3), 0);
-            rc.writeSharedArray(15+2*(id%3), 0);
         }
     }
 
@@ -273,6 +270,9 @@ public abstract class Robot {
     }
 
     public MapLocation allyCenter() {
+        if (this.nearbyAllies.length == 0)
+            return null;
+
         int x = 0;
         int y = 0;
 
@@ -303,37 +303,5 @@ public abstract class Robot {
                 return;
             }
         }
-    }
-
-    public Direction approachAlly() {
-        Direction bestDir = Direction.CENTER;
-        int closestDist = Integer.MAX_VALUE;
-
-        for (RobotInfo info : nearbyAllies) {
-            Direction dir = rc.getLocation().directionTo(info.location);
-
-            if (rc.canMove(dir) && rc.getLocation().add(dir).distanceSquaredTo(info.location) < closestDist) {
-                closestDist = rc.getLocation().add(dir).distanceSquaredTo(info.location);
-                bestDir = dir;
-            }
-            else if (rc.canMove(dir.rotateLeft()) && rc.getLocation().add(dir.rotateLeft()).distanceSquaredTo(info.location) < closestDist) {
-                closestDist = rc.getLocation().add(dir.rotateLeft()).distanceSquaredTo(info.location);
-                bestDir = dir.rotateLeft();
-            }
-            else if (rc.canMove(dir.rotateRight()) && rc.getLocation().add(dir.rotateRight()).distanceSquaredTo(info.location) < closestDist) {
-                closestDist = rc.getLocation().add(dir.rotateRight()).distanceSquaredTo(info.location);
-                bestDir = dir.rotateRight();
-            }
-            else if (rc.canMove(dir.rotateRight().rotateRight()) && rc.getLocation().add(dir.rotateRight().rotateRight()).distanceSquaredTo(info.location) < closestDist) {
-                closestDist = rc.getLocation().add(dir.rotateLeft().rotateRight()).distanceSquaredTo(info.location);
-                bestDir = dir.rotateRight().rotateRight();
-            }
-            else if (rc.canMove(dir.rotateLeft().rotateLeft()) && rc.getLocation().add(dir.rotateLeft().rotateLeft()).distanceSquaredTo(info.location) < closestDist) {
-                closestDist = rc.getLocation().add(dir.rotateLeft().rotateLeft()).distanceSquaredTo(info.location);
-                bestDir = dir.rotateLeft().rotateLeft();
-            }
-        }
-
-        return bestDir;
     }
 }

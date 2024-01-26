@@ -1,4 +1,4 @@
-package Bot16;
+package FailedDefense;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -30,7 +30,10 @@ public strictfp class RobotPlayer {
         if (id < 5) {
             robot = new Builder(rc, id);
         }
-        else if (id < 18) {
+        else if (id < 13) {
+            robot = new Scout(rc, id);
+        }
+        else if (id < 22) {
             robot = new Healer(rc, id);
         }
         else if (id > 45 && id < 49) {

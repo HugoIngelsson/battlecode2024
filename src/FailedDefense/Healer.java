@@ -1,25 +1,27 @@
-package Bot16;
+package FailedDefense;
 
-import battlecode.common.FlagInfo;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import FailedDefense.fast.FastMath;
+import battlecode.common.*;
 
-public class Attacker extends Robot {
+public class Healer extends Robot {
     RobotController rc;
     int id;
 
-    public Attacker(RobotController rc, int id) throws GameActionException {
+    public Healer(RobotController rc, int id) throws GameActionException {
         super(rc, id);
 
         this.rc = rc;
         this.id = id;
+        this.curDest = FastMath.getRandomMapLocation();
         this.curDest = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
     }
 
     void play() throws GameActionException {
         if (rc.hasFlag()) {
             curDest = super.getClosestBase();
+
+            super.move(curDest);
+            return;
         }
         else if (super.getEnemyFlags().length > 0) {
             FlagInfo flag = super.getEnemyFlags()[0];
@@ -30,9 +32,8 @@ public class Attacker extends Robot {
                     rc.move(flag.getLocation().directionTo(rc.getLocation()));
                 }
             }
-            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 6)
+            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 4)
                 tempTarget = flag.getLocation();
-            else tempTarget = null;
 
             if (rc.getLocation().equals(tempTarget))
                 if (!rc.canPickupFlag(tempTarget)) tempTarget = null;
@@ -44,30 +45,35 @@ public class Attacker extends Robot {
         }
 
         Micro.sense();
+        Micro.healMicro();
         Micro.attackMicro();
-        Micro.buildMicro();
 
         if (rc.isActionReady()) {
             Micro.sense();
             Micro.attackMicro();
         }
 
-        Micro.healMicro();
-
         if (super.getNearbyCrumbs().length > 0) {
             tempTarget = super.getNearbyCrumbs()[0];
         }
 
         if (rc.isMovementReady()) {
-            if (Micro.enemyStrength > 150 && (rc.getHealth() < 200 || rc.hasFlag())) {
-                Micro.kite(Micro.getEnemyMiddle());
+            if (super.getNearbyAllies().length * 1.2 < super.getNearbyEnemies().length) {
+                MapLocation center = super.allyCenter();
+
+                if (center != null)
+                    super.move(center);
+                else if (Micro.attackTarget != null)
+                    Micro.kite(Micro.attackTarget.location);
+                else
+                    Micro.kite(Micro.chaseTarget.location);
             }
-            else if (Micro.closeFriendsSize < 1 && Micro.allyCount >= 2 && Micro.enemyStrength >= 100 && !rc.hasFlag()) {
-                rc.move(super.approachAlly());
-            }
-            else if (Micro.enemyStrength < 100) {
+            else if (rc.hasFlag() || super.getNearbyEnemies().length <= FEAR_LIMIT) {
                 if (tempTarget != null) super.move(tempTarget);
                 else super.move(curDest);
+            }
+            else {
+                super.move(super.allyCenter());
             }
         }
     }
