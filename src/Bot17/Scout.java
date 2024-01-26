@@ -1,10 +1,10 @@
-package Bot16;
+package Bot17;
 
+import Bot17.fast.FastMath;
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import Bot16.fast.FastMath;
 
 public class Scout extends Robot {
     RobotController rc;
@@ -38,18 +38,24 @@ public class Scout extends Robot {
             else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 4)
                 tempTarget = flag.getLocation();
 
-            if (tempTarget == null);
-            else if (rc.canPickupFlag(tempTarget)) {
-                rc.pickupFlag(tempTarget);
-                hadFlag = true;
-                lastTurn = rc.getRoundNum();
-            }
-            else if (rc.getLocation().equals(tempTarget))
-                tempTarget = null;
+            if (rc.getLocation().equals(tempTarget))
+                if (!rc.canPickupFlag(tempTarget)) tempTarget = null;
+                else if (rc.isActionReady()) {
+                    rc.pickupFlag(tempTarget);
+                    hadFlag = true;
+                    lastTurn = rc.getRoundNum();
+                }
         }
 
         Micro.sense();
-        Micro.attackMicro();
+        while (attack());
+        if (!microAttacker.doMicro()) {
+            if (Micro.attackTarget != null) super.move(Micro.attackTarget.location);
+            else if (Micro.chaseTarget != null) super.move(Micro.chaseTarget.location);
+            else if (tempTarget != null) super.move(tempTarget);
+            else super.move(curDest);
+        }
+        while (attack());
 
         if (rc.isActionReady()) {
             Micro.sense();
@@ -57,13 +63,6 @@ public class Scout extends Robot {
         }
 
         Micro.healMicro();
-
-        if (rc.isMovementReady()) {
-            // Scouts shouldn't be afraid of charging into battle and setting off traps
-            // so they don't consider how many enemies there are
-            if (tempTarget != null) super.move(tempTarget);
-            else super.move(curDest);
-        }
     }
 
     @Override

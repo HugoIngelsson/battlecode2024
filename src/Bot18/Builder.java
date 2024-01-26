@@ -1,7 +1,10 @@
-package Bot16;
+package Bot18;
 
-import battlecode.common.*;
-import Bot16.fast.FastMath;
+import Bot18.fast.FastMath;
+import battlecode.common.FlagInfo;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -58,9 +61,11 @@ public class Builder extends Robot {
     }
 
     void play() throws GameActionException {
-        FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1);
         if (rc.hasFlag()) {
             curDest = super.getClosestBase();
+
+            super.move(curDest);
+            return;
         }
         else if (super.getEnemyFlags().length > 0) {
             FlagInfo flag = super.getEnemyFlags()[0];
@@ -87,7 +92,14 @@ public class Builder extends Robot {
 
         Micro.sense();
         Micro.buildMicro();
-        Micro.attackMicro();
+        while (attack());
+        if (!microAttacker.doMicro()) {
+            if (Micro.attackTarget != null) super.move(Micro.attackTarget.location);
+            else if (Micro.chaseTarget != null) super.move(Micro.chaseTarget.location);
+            else if (tempTarget != null) super.move(tempTarget);
+            else super.move(curDest);
+        }
+        while (attack());
 
         if (rc.isActionReady()) {
             Micro.sense();
@@ -98,22 +110,6 @@ public class Builder extends Robot {
 
         if (super.getNearbyCrumbs().length > 0) {
              curDest = super.getNearbyCrumbs()[0];
-        }
-
-        if (rc.isMovementReady()) {
-            if (Micro.enemyStrength > 150 && (rc.getHealth() < 200 || rc.hasFlag())) {
-                Micro.kite(Micro.getEnemyMiddle());
-            }
-            else if (Micro.closeFriendsSize < 1 && Micro.allyCount >= 2 && Micro.enemyStrength >= 100 && !rc.hasFlag()) {
-                Direction dir = super.approachAlly();
-
-                if (rc.canMove(dir))
-                    rc.move(dir);
-            }
-            else if (Micro.enemyStrength < 100) {
-                if (tempTarget != null) super.move(tempTarget);
-                else super.move(curDest);
-            }
         }
     }
 

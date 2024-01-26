@@ -1,4 +1,4 @@
-package Bot16;
+package Bot17;
 
 import battlecode.common.*;
 
@@ -113,20 +113,11 @@ public class ParallelizedBF {
                 if ((directionFinder & (1L<<(j+i*8))) > 0) {
                     Direction d = directions[3*(i-2)+(j-2)];
                     MapLocation dest = rc.getLocation().add(d);
-                    RobotInfo passingTarget = null;
-                    if (rc.onTheMap(dest.add(d)))
-                        passingTarget = rc.senseRobotAtLocation(dest.add(d));
-
                     if ((rc.canMove(d) || rc.senseMapInfo(dest).isWater()) &&
                             rc.getLocation().distanceSquaredTo(dest) < minDist &&
                             !visited.contains(getCode(dest))) {
                         minDir = d;
                         minDist = rc.getLocation().distanceSquaredTo(dest);
-                    }
-                    else if (rc.hasFlag() && passingTarget != null &&
-                                passingTarget.team == rc.getTeam() &&
-                                rc.sensePassability(dest)) {
-                        rc.dropFlag(dest);
                     }
                 }
             }

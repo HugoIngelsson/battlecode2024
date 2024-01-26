@@ -1,4 +1,4 @@
-package Bot16;
+package Bot17;
 
 import battlecode.common.*;
 
@@ -76,19 +76,21 @@ class Micro {
 
                 allies[allyCount++] = robot;
                 allyStrength += expectedAllyDamageOutput(robot);
-                if (robot.location.distanceSquaredTo(rc.getLocation()) <= 4) {
+                if (robot.location.distanceSquaredTo(rc.getLocation()) <= 8) {
                     closeFriendsSize++;
 
                     // sense a suitable heal target
-                    if (robot.health < leastHealthAlly) {
-                        leastHealthAllyDist = robot.location.distanceSquaredTo(rc.getLocation());
-                        leastHealthAlly = robot.health;
-                        healTarget = robot;
-                    }
-                    else if (robot.health == leastHealthAlly &&
-                            robot.location.distanceSquaredTo(rc.getLocation()) < leastHealthAllyDist) {
-                        leastHealthAllyDist = robot.location.distanceSquaredTo(rc.getLocation());
-                        healTarget = robot;
+                    if (robot.location.distanceSquaredTo(rc.getLocation()) <= 4) {
+                        if (robot.health < leastHealthAlly) {
+                            leastHealthAllyDist = robot.location.distanceSquaredTo(rc.getLocation());
+                            leastHealthAlly = robot.health;
+                            healTarget = robot;
+                        }
+                        else if (robot.health == leastHealthAlly &&
+                                robot.location.distanceSquaredTo(rc.getLocation()) < leastHealthAllyDist) {
+                            leastHealthAllyDist = robot.location.distanceSquaredTo(rc.getLocation());
+                            healTarget = robot;
+                        }
                     }
                 }
             }
@@ -121,14 +123,32 @@ class Micro {
     }
 
     static void buildMicro() throws GameActionException {
-        if (rc.canBuild(TrapType.STUN, rc.getLocation()) && enemyCount > 3) {
-            int closestTrap = Integer.MAX_VALUE;
+        if (allyStrength > 2*enemyStrength) // we heavily overpower them
+            return;
+
+        RobotInfo target = attackTarget;
+        if (target != null) {
+            Direction toTarget = rc.getLocation().directionTo(target.location);
+            Direction[] dirs = {toTarget, Direction.CENTER, toTarget.rotateLeft(),
+                    toTarget.rotateRight(), toTarget.rotateLeft().rotateLeft(), toTarget.rotateRight().rotateRight()};
+
+            for (Direction dir : dirs) {
+                if (rc.canBuild(TrapType.STUN, rc.getLocation().add(dir))) {
+                    rc.build(TrapType.STUN, rc.getLocation().add(dir));
+
+                    if (enemyStrength > 2*allyStrength && rc.canMove(toTarget.opposite())) // bait enemy into trap
+                        rc.move(toTarget.opposite());
+                    return;
+                }
+            }
+        }
+        else if (rc.getCrumbs() > 3000 && rc.canBuild(TrapType.STUN, rc.getLocation()) && enemyCount > 1) {
+            int nearbyTraps = 0;
             for (MapInfo info : rc.senseNearbyMapInfos(6)) {
-                if (info.getTrapType() != TrapType.NONE)
-                    closestTrap = Math.min(closestTrap, info.getMapLocation().distanceSquaredTo(rc.getLocation()));
+                if (info.getTrapType() != TrapType.NONE) nearbyTraps++;
             }
 
-            if (closestTrap > 4) rc.build(TrapType.STUN, rc.getLocation());
+            if (nearbyTraps < 3) rc.build(TrapType.STUN, rc.getLocation());
         }
     }
 
@@ -294,17 +314,5 @@ class Micro {
         }
 
         return false;
-    }
-
-    static MapLocation getEnemyMiddle() {
-        if (enemyCount == 0) return null;
-        int x = 0, y = 0;
-
-        for (int i = enemyCount; --i >= 0;) {
-            x += enemies[i].location.x;
-            y += enemies[i].location.y;
-        }
-
-        return new MapLocation(x/enemyCount, y/enemyCount);
     }
 }

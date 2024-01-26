@@ -1,4 +1,4 @@
-package Bot16;
+package Bot18;
 
 import battlecode.common.*;
 
@@ -124,8 +124,8 @@ public class ParallelizedBF {
                         minDist = rc.getLocation().distanceSquaredTo(dest);
                     }
                     else if (rc.hasFlag() && passingTarget != null &&
-                                passingTarget.team == rc.getTeam() &&
-                                rc.sensePassability(dest)) {
+                            passingTarget.team == rc.getTeam() &&
+                            rc.sensePassability(dest) && rc.isActionReady()) {
                         rc.dropFlag(dest);
                     }
                 }

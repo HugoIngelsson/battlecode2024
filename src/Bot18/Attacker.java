@@ -1,6 +1,9 @@
-package Bot16;
+package Bot18;
 
-import battlecode.common.*;
+import battlecode.common.FlagInfo;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
 
 public class Attacker extends Robot {
     RobotController rc;
@@ -17,6 +20,9 @@ public class Attacker extends Robot {
     void play() throws GameActionException {
         if (rc.hasFlag()) {
             curDest = super.getClosestBase();
+
+            super.move(curDest);
+            return;
         }
         else if (super.getEnemyFlags().length > 0) {
             FlagInfo flag = super.getEnemyFlags()[0];
@@ -42,7 +48,14 @@ public class Attacker extends Robot {
         }
 
         Micro.sense();
-        Micro.attackMicro();
+        while (attack());
+        if (!microAttacker.doMicro()) {
+            if (Micro.attackTarget != null) super.move(Micro.attackTarget.location);
+            else if (Micro.chaseTarget != null) super.move(Micro.chaseTarget.location);
+            else if (tempTarget != null) super.move(tempTarget);
+            else super.move(curDest);
+        }
+        while (attack());
         Micro.buildMicro();
 
         if (rc.isActionReady()) {
@@ -54,22 +67,6 @@ public class Attacker extends Robot {
 
         if (super.getNearbyCrumbs().length > 0) {
             tempTarget = super.getNearbyCrumbs()[0];
-        }
-
-        if (rc.isMovementReady()) {
-            if (Micro.enemyStrength > 150 && (rc.getHealth() < 200 || rc.hasFlag())) {
-                Micro.kite(Micro.getEnemyMiddle());
-            }
-            else if (Micro.closeFriendsSize < 1 && Micro.allyCount >= 2 && Micro.enemyStrength >= 100 && !rc.hasFlag()) {
-                Direction dir = super.approachAlly();
-
-                if (rc.canMove(dir))
-                    rc.move(dir);
-            }
-            else if (Micro.enemyStrength < 100) {
-                if (tempTarget != null) super.move(tempTarget);
-                else super.move(curDest);
-            }
         }
     }
 

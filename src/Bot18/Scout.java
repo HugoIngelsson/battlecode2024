@@ -1,10 +1,10 @@
-package Bot16;
+package Bot18;
 
+import Bot18.fast.FastMath;
 import battlecode.common.FlagInfo;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import Bot16.fast.FastMath;
 
 public class Scout extends Robot {
     RobotController rc;
@@ -35,8 +35,9 @@ public class Scout extends Robot {
                     rc.move(flag.getLocation().directionTo(rc.getLocation()));
                 }
             }
-            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 4)
+            else if (flag.getLocation().distanceSquaredTo(rc.getLocation()) > 6)
                 tempTarget = flag.getLocation();
+            else tempTarget = null;
 
             if (tempTarget == null);
             else if (rc.canPickupFlag(tempTarget)) {
@@ -49,7 +50,14 @@ public class Scout extends Robot {
         }
 
         Micro.sense();
-        Micro.attackMicro();
+        while (attack());
+        if (!microAttacker.doMicro()) {
+            if (Micro.attackTarget != null) super.move(Micro.attackTarget.location);
+            else if (Micro.chaseTarget != null) super.move(Micro.chaseTarget.location);
+            else if (tempTarget != null) super.move(tempTarget);
+            else super.move(curDest);
+        }
+        while (attack());
 
         if (rc.isActionReady()) {
             Micro.sense();
@@ -57,13 +65,6 @@ public class Scout extends Robot {
         }
 
         Micro.healMicro();
-
-        if (rc.isMovementReady()) {
-            // Scouts shouldn't be afraid of charging into battle and setting off traps
-            // so they don't consider how many enemies there are
-            if (tempTarget != null) super.move(tempTarget);
-            else super.move(curDest);
-        }
     }
 
     @Override
