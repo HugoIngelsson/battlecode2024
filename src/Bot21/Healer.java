@@ -18,6 +18,11 @@ public class Healer extends Robot {
 
     void play() throws GameActionException {
         if (rc.hasFlag()) {
+            if (rc.getRoundNum() < 101) return;
+            else if (rc.getRoundNum() == 101) {
+                rc.dropFlag(rc.getLocation().add(curDest.directionTo(rc.getLocation())));
+            }
+
             curDest = super.getClosestBase();
 
             if (!microAttacker.doMicro())

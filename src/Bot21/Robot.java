@@ -103,7 +103,7 @@ public abstract class Robot {
                 tempTarget = null;
         }
 
-        if (rc.hasFlag()) {
+        if (rc.hasFlag() && rc.getRoundNum() > 200) {
             hadFlag = true;
             lastTurn = rc.getRoundNum();
 
@@ -179,6 +179,8 @@ public abstract class Robot {
                     for (MapInfo mii : mi) if (!mii.isPassable()) impassables++;
                     rc.writeSharedArray(12, impassables);
                 }
+
+                rc.pickupFlag(rc.getLocation());
             }
             else {
                 closeFlags = rc.senseNearbyFlags(2);

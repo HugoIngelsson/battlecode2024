@@ -118,7 +118,7 @@ public class MicroAttacker {
     }
 
     boolean apply(MicroInfo bestMicro) throws GameActionException {
-        if (bestMicro.dir == Direction.CENTER) return true;
+        if (bestMicro.dir == Direction.CENTER) return false;
 
         if (rc.canMove(bestMicro.dir)) {
             if(bestMicro.dir != Direction.CENTER)

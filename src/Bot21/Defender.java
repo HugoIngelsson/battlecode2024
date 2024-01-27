@@ -80,11 +80,12 @@ public class Defender extends Robot {
 
     void play() throws GameActionException {
         byteZero = rc.readSharedArray(0);
-        if (!RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length < 3 &&
-                rc.getRoundNum() - lastTurnSeenFlag < 30) {
+        if (!RobotPlayer.bitAt(byteZero, 7 - (flagId)) && (super.getNearbyEnemies().length < 3 ||
+                rc.getRoundNum() - lastTurnSeenFlag >= 30)) {
             turnOnSafetyByte(flagId);
         }
-        else if (RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length > 3) {
+        else if (RobotPlayer.bitAt(byteZero, 7 - (flagId)) && super.getNearbyEnemies().length > 3 &&
+                rc.getRoundNum() - lastTurnSeenFlag < 30) {
             turnOffSafetyByte(flagId);
         }
 
