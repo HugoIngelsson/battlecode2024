@@ -144,7 +144,7 @@ class Micro {
         }
 
         int TRAP_DISTANCE = 4;
-        if (rc.getCrumbs() > 3000) TRAP_DISTANCE--;
+        if (rc.getCrumbs() > 3000) TRAP_DISTANCE-=2;
 
         if (rc.canBuild(TrapType.STUN, rc.getLocation()) && enemyCount > 3) {
             int closestTrap = Integer.MAX_VALUE;
@@ -153,7 +153,12 @@ class Micro {
                     closestTrap = Math.min(closestTrap, info.getMapLocation().distanceSquaredTo(rc.getLocation()));
             }
 
-            if (closestTrap > TRAP_DISTANCE) rc.build(TrapType.STUN, rc.getLocation());
+            if (closestTrap > TRAP_DISTANCE) {
+                if (rc.getCrumbs() > 5000)
+                    rc.build(TrapType.EXPLOSIVE, rc.getLocation());
+                else
+                    rc.build(TrapType.STUN, rc.getLocation());
+            }
         }
     }
 
