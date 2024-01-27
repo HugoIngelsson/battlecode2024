@@ -1,13 +1,13 @@
-package Bot19;
+package Bot21;
 
-import Bot19.fast.FastMath;
+import Bot21.fast.FastMath;
 import battlecode.common.*;
 
 import java.util.ArrayList;
 import java.util.Random;
 
 public class Defender extends Robot {
-    static final int DEFENSE_RADIUS = 1;
+    static final int DEFENSE_RADIUS = 2;
     static final int BOMB_DEFENSE_RADIUS = 2;
 
     RobotController rc;
@@ -91,11 +91,20 @@ public class Defender extends Robot {
         FlagInfo[] nearbyFlags = rc.senseNearbyFlags(-1, rc.getTeam());
         if (nearbyFlags.length > 0) lastTurnSeenFlag = rc.getRoundNum();
 
-        if (rc.getRoundNum() < 200 && rc.getExperience(SkillType.BUILD) < 30) {
+        if (rc.getRoundNum() < 180 && rc.getExperience(SkillType.BUILD) < 30) {
             if(rc.getRoundNum() > 20) {
                 if (rc.isActionReady()) {
                     for (Direction d : Direction.allDirections()) {
                         if(rc.getRoundNum() < 75) {
+                            if (rc.canDig(rc.getLocation().add(d))) {
+                                rc.dig(rc.getLocation().add(d));
+                            }
+                        } else if(rc.getRoundNum() < 120){
+                            if(rc.canFill(rc.getLocation().add(d))){
+                                rc.fill(rc.getLocation().add(d));
+                            }
+                        }
+                        else {
                             if (rc.canDig(rc.getLocation().add(d))) {
                                 rc.dig(rc.getLocation().add(d));
                             }
@@ -117,15 +126,14 @@ public class Defender extends Robot {
             }
         }
         else {
-            if (rc.isActionReady() && rc.getRoundNum() - lastTurnSeenFlag < 30) {
-                if (rc.getLocation().y == spawnCenter.y) {
-                    if (rc.getLocation().x != spawnCenter.x) {
-                        if (rc.canBuild(TrapType.STUN, rc.getLocation()))
-                            rc.build(TrapType.STUN, rc.getLocation());
-                    }
-                    else if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
+            dist = spawnCenter.distanceSquaredTo(rc.getLocation());
+
+            if (rc.getRoundNum() - lastTurnSeenFlag < 30 && dist <= DEFENSE_RADIUS && rc.canBuild(TrapType.STUN, rc.getLocation())) {
+                if (dist <= BOMB_DEFENSE_RADIUS && (rc.getLocation().x+rc.getLocation().y)%2==0) {
+                    if (rc.canBuild(TrapType.EXPLOSIVE, rc.getLocation()))
                         rc.build(TrapType.EXPLOSIVE, rc.getLocation());
                 }
+                else rc.build(TrapType.STUN, rc.getLocation());
             }
 
             if (rc.isActionReady() && rc.getRoundNum() > 200) {

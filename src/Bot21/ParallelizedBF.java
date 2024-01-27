@@ -1,4 +1,4 @@
-package FailedDefense;
+package Bot21;
 
 import battlecode.common.*;
 
@@ -49,13 +49,12 @@ public class ParallelizedBF {
         int deltaX = robotLocation.x - 3;
         int deltaY = robotLocation.y - 3;
 
-        if (greedyRobotDistance <= 3) {
+        if (greedyRobotDistance < 3) {
             int shift = (target.x - deltaX) + 8 * (target.y - deltaY);
             iterations[0] |= 1L<<shift;
 
             if (greedyRobotDistance <= 1) return robotLocation.directionTo(target);
         }
-
         for (MapInfo info : rc.senseNearbyMapInfos(-1)) {
             MapLocation location = info.getMapLocation();
             int shift = (location.x - deltaX) + 8 * (location.y - deltaY);
@@ -66,27 +65,27 @@ public class ParallelizedBF {
                         greedyDist == 3 && strictlyCloser(robotLocation, location, target)) {
                     int id = greedyDistance(location, target) - greedyRobotDistance + 4;
 
-                    if (info.isWater()) {
-                        iterations[id+WATER_COST-1] |= 1L<<shift;
-                    }
-                    else if (info.isPassable()) {
+                    if (info.isPassable()) {
                         iterations[id] |= 1L<<shift;
+                    }
+                    else if (info.isWater()) {
+                        iterations[id+WATER_COST-1] |= 1L<<shift;
                     }
                 }
 
-                if (info.isWater()) {
-                    waterFilter |= 1L<<shift;
-                }
-                else if (info.isPassable() && !info.isDam()) {
+                if (info.isPassable() && !info.isDam()) {
                     walkableFilter |= 1L<<shift;
+                }
+                else if (info.isWater()) {
+                    waterFilter |= 1L<<shift;
                 }
             }
         }
 
-        if (rc.hasFlag() || !rc.isActionReady() || rc.getRoundNum() < 200 && rc.getRoundNum() > 20) waterFilter = 0;
+        if (rc.hasFlag() || !rc.isActionReady()) waterFilter = 0;
 
         for (int i=0; i<iterations.length-WATER_COST; i++) {
-            long waters = iterations[i] & waterFilter; rc.setIndicatorString(Long.toBinaryString(waterFilter));
+            long waters = iterations[i] & waterFilter;
             long lands = iterations[i] & walkableFilter;
 
             long nextWaterHoriz = waters | (waters<<1) | (waters>>1);
@@ -114,15 +113,20 @@ public class ParallelizedBF {
                 if ((directionFinder & (1L<<(j+i*8))) > 0) {
                     Direction d = directions[3*(i-2)+(j-2)];
                     MapLocation dest = rc.getLocation().add(d);
-                    if (rc.senseMapInfo(dest).isWater() && !visited.contains(getCode(dest)) &&
-                            rc.getLocation().distanceSquaredTo(dest) + WATER_COST < minDist && d != Direction.CENTER) {
-                        minDir = d;
-                        minDist = rc.getLocation().distanceSquaredTo(dest) + WATER_COST;
-                    }
-                    else if (rc.canMove(d) && rc.getLocation().distanceSquaredTo(dest) < minDist &&
-                            !visited.contains(getCode(dest)) && d != Direction.CENTER) {
+                    RobotInfo passingTarget = null;
+                    if (rc.onTheMap(dest))
+                        passingTarget = rc.senseRobotAtLocation(dest);
+
+                    if ((rc.canMove(d) || rc.senseMapInfo(dest).isWater()) &&
+                            rc.getLocation().distanceSquaredTo(dest) < minDist &&
+                            !visited.contains(getCode(dest))) {
                         minDir = d;
                         minDist = rc.getLocation().distanceSquaredTo(dest);
+                    }
+                    else if (rc.hasFlag() && passingTarget != null &&
+                            passingTarget.team == rc.getTeam() && rc.isActionReady()
+                                && d != Direction.CENTER) {
+                        rc.dropFlag(dest);
                     }
                 }
             }

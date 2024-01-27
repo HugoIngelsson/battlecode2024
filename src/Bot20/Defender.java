@@ -1,6 +1,6 @@
-package Bot19;
+package Bot20;
 
-import Bot19.fast.FastMath;
+import Bot20.fast.FastMath;
 import battlecode.common.*;
 
 import java.util.ArrayList;
